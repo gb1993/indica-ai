@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { MagicLinkForm } from "./magic-link-form";
+import { EmailCodeForm } from "./email-code-form";
 
 export const metadata: Metadata = { title: "Entrar" };
 
@@ -37,7 +37,7 @@ export default async function LoginPage({
           </p>
         ) : null}
 
-        <MagicLinkForm />
+        <EmailCodeForm />
         <p className="mt-6 text-center text-xs leading-relaxed text-[var(--muted)]">
           O acesso é restrito aos seus grupos. Seus dados nunca ficam no armazenamento local do navegador.
         </p>

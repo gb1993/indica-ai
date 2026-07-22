@@ -1,39 +1,103 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { getPublicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
-export type MagicLinkState = { status: "idle" | "success" | "error"; message: string };
+export type RequestCodeState = {
+  status: "idle" | "sent" | "error";
+  message: string;
+  email?: string;
+};
 
-const magicLinkSchema = z.object({
-  email: z.email("Informe um e-mail válido.").max(254),
+export type VerifyCodeState = {
+  status: "idle" | "error";
+  message: string;
+};
+
+const emailSchema = z.preprocess(
+  (value) =>
+    typeof value === "string" ? value.trim().toLowerCase() : value,
+  z.email("Informe um e-mail válido.").max(254),
+);
+
+const requestCodeSchema = z.object({
+  email: emailSchema,
 });
 
-export async function requestMagicLink(
-  _previousState: MagicLinkState,
+const verifyCodeSchema = z.object({
+  email: emailSchema,
+  token: z.preprocess(
+    (value) =>
+      typeof value === "string" ? value.replace(/\s/g, "") : value,
+    z
+      .string()
+      .regex(/^\d{6,10}$/, "Informe o código numérico recebido por e-mail."),
+  ),
+});
+
+export async function requestEmailCode(
+  _previousState: RequestCodeState,
   formData: FormData,
-): Promise<MagicLinkState> {
-  const result = magicLinkSchema.safeParse({ email: formData.get("email") });
+): Promise<RequestCodeState> {
+  const result = requestCodeSchema.safeParse({ email: formData.get("email") });
 
   if (!result.success) {
     return { status: "error", message: result.error.issues[0].message };
   }
 
   const supabase = await createClient();
-  const env = getPublicEnv();
-  await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email: result.data.email,
     options: {
-      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/app`,
       shouldCreateUser: true,
     },
   });
 
+  if (error) {
+    console.error("Email OTP request failed", { code: error.code });
+    return {
+      status: "error",
+      message: "Não foi possível enviar o código agora. Aguarde um instante e tente novamente.",
+    };
+  }
+
   // Deliberately generic to avoid revealing whether an address already exists.
   return {
-    status: "success",
-    message: "Se o endereço puder receber o acesso, enviaremos um link em instantes.",
+    status: "sent",
+    email: result.data.email,
+    message: "Enviamos um código de acesso para o e-mail informado.",
   };
+}
+
+export async function verifyEmailCode(
+  _previousState: VerifyCodeState,
+  formData: FormData,
+): Promise<VerifyCodeState> {
+  const result = verifyCodeSchema.safeParse({
+    email: formData.get("email"),
+    token: formData.get("token"),
+  });
+
+  if (!result.success) {
+    return { status: "error", message: result.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: result.data.email,
+    token: result.data.token,
+    type: "email",
+  });
+
+  if (error) {
+    console.error("Email OTP verification failed", { code: error.code });
+    return {
+      status: "error",
+      message: "Código inválido ou expirado. Confira o código e tente novamente.",
+    };
+  }
+
+  redirect("/app");
 }
