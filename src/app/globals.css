@@ -44,6 +44,19 @@ input {
   font: inherit;
 }
 
+button:not(:disabled) {
+  cursor: pointer;
+  transition: filter 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(0.82) !important;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;

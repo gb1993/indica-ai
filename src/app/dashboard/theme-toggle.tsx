@@ -21,7 +21,7 @@ export function ThemeToggle({ theme }: { theme: "dark" | "light" }) {
         type="submit"
         aria-label={`Usar tema ${nextTheme === "dark" ? "escuro" : "claro"}`}
         title={`Usar tema ${nextTheme === "dark" ? "escuro" : "claro"}`}
-        className="grid size-10 place-items-center rounded-xl border bg-[var(--surface-muted)] text-lg transition hover:brightness-110"
+        className="grid size-10 place-items-center rounded-xl border bg-[var(--surface-muted)] text-lg transition"
       >
         <span aria-hidden="true">{optimisticTheme === "dark" ? "☀" : "☾"}</span>
       </button>

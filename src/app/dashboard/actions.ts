@@ -11,7 +11,7 @@ const themeSchema = z.enum(["dark", "light"]);
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect("/");
 }
 
 export async function updateTheme(formData: FormData) {
@@ -20,7 +20,7 @@ export async function updateTheme(formData: FormData) {
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/login");
+  if (!data.user) redirect("/");
 
   const { error } = await supabase
     .from("profiles")

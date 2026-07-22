@@ -6,3 +6,4 @@ out/
 .env.*.local
 *.tsbuildinfo
 npm-debug.log*
+supabase/.temp/

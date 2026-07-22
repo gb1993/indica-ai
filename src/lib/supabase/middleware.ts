@@ -34,9 +34,13 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
 
-  if (!data?.claims && request.nextUrl.pathname.startsWith("/app")) {
+  const requiresAuthentication =
+    request.nextUrl.pathname.startsWith("/dashboard") ||
+    request.nextUrl.pathname.startsWith("/app");
+
+  if (!data?.claims && requiresAuthentication) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
+    loginUrl.pathname = "/";
     loginUrl.search = "";
     return NextResponse.redirect(loginUrl);
   }

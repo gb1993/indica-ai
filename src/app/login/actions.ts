@@ -9,6 +9,7 @@ export type RequestCodeState = {
   status: "idle" | "sent" | "error";
   message: string;
   email?: string;
+  next?: string;
 };
 
 export type VerifyCodeState = {
@@ -35,7 +36,15 @@ const verifyCodeSchema = z.object({
       .string()
       .regex(/^\d{6,10}$/, "Informe o código numérico recebido por e-mail."),
   ),
+  next: z.string().max(300).optional(),
 });
+
+function safeNextPath(value: unknown) {
+  if (typeof value !== "string") return "/dashboard";
+  return value.startsWith("/invite/") && !value.startsWith("//")
+    ? value
+    : "/dashboard";
+}
 
 export async function requestEmailCode(
   _previousState: RequestCodeState,
@@ -67,6 +76,7 @@ export async function requestEmailCode(
   return {
     status: "sent",
     email: result.data.email,
+    next: safeNextPath(formData.get("next")),
     message: "Enviamos um código de acesso para o e-mail informado.",
   };
 }
@@ -78,6 +88,7 @@ export async function verifyEmailCode(
   const result = verifyCodeSchema.safeParse({
     email: formData.get("email"),
     token: formData.get("token"),
+    next: formData.get("next"),
   });
 
   if (!result.success) {
@@ -99,5 +110,5 @@ export async function verifyEmailCode(
     };
   }
 
-  redirect("/app");
+  redirect(safeNextPath(result.data.next));
 }
