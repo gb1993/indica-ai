@@ -6,7 +6,7 @@ Aplicação privada para grupos de amigos indicarem, votarem e conversarem sobre
 
 1. Copie `.env.example` para `.env.local` e preencha as credenciais do projeto Supabase.
 2. Aplique as migrations de `supabase/migrations` no Supabase.
-3. No painel do Supabase, habilite Google e e-mail (Magic Link) e adicione `http://localhost:3000/auth/callback` às URLs de redirecionamento.
+3. No painel do Supabase, habilite a autenticação por e-mail (Magic Link) e adicione `http://localhost:3000/auth/callback` às URLs de redirecionamento.
 4. Instale e execute:
 
 ```bash

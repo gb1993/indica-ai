@@ -27,7 +27,7 @@ export function MagicLinkForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl border bg-[var(--surface)] px-4 py-3 text-sm font-semibold transition hover:bg-[var(--surface-muted)] disabled:cursor-wait disabled:opacity-60"
+        className="w-full rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[#07150c] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
       >
         {pending ? "Enviando…" : "Receber link mágico"}
       </button>

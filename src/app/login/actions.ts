@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getPublicEnv } from "@/lib/env";
@@ -11,20 +10,6 @@ export type MagicLinkState = { status: "idle" | "success" | "error"; message: st
 const magicLinkSchema = z.object({
   email: z.email("Informe um e-mail válido.").max(254),
 });
-
-export async function loginWithGoogle() {
-  const supabase = await createClient();
-  const env = getPublicEnv();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/app`,
-    },
-  });
-
-  if (error || !data.url) redirect("/login?error=oauth");
-  redirect(data.url);
-}
 
 export async function requestMagicLink(
   _previousState: MagicLinkState,

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { loginWithGoogle } from "./actions";
 import { MagicLinkForm } from "./magic-link-form";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -37,20 +36,6 @@ export default async function LoginPage({
             Não foi possível concluir o acesso. Tente novamente.
           </p>
         ) : null}
-
-        <form action={loginWithGoogle}>
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-3 rounded-xl bg-[var(--accent)] px-4 py-3 font-bold text-[#07150c] transition hover:brightness-110"
-          >
-            <span aria-hidden="true" className="text-lg">G</span>
-            Continuar com Google
-          </button>
-        </form>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-widest text-[var(--muted)]">
-          <span className="h-px flex-1 bg-[var(--border)]" />ou<span className="h-px flex-1 bg-[var(--border)]" />
-        </div>
 
         <MagicLinkForm />
         <p className="mt-6 text-center text-xs leading-relaxed text-[var(--muted)]">
