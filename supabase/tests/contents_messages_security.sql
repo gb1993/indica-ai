@@ -4,13 +4,13 @@ create extension if not exists pgtap with schema extensions;
 select plan(17);
 
 insert into auth.users (
-  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, last_sign_in_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
 )
 values
-  ('00000000-0000-0000-0000-000000000000', '71000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'author@example.com', '', now(), '{}', '{"name":"Author"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '71000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'reader@example.com', '', now(), '{}', '{"name":"Reader"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '71000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'stranger@example.com', '', now(), '{}', '{"name":"Stranger"}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '71000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'author@example.com', '', now(), now(), '{}', '{"name":"Author"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '71000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'reader@example.com', '', now(), now(), '{}', '{"name":"Reader"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '71000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'stranger@example.com', '', now(), now(), '{}', '{"name":"Stranger"}', now(), now());
 
 insert into public.groups (id, name, owner_id)
 values ('72000000-0000-0000-0000-000000000001', 'Grupo de conteúdo', '71000000-0000-0000-0000-000000000001');

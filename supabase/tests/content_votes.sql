@@ -4,14 +4,14 @@ create extension if not exists pgtap with schema extensions;
 select plan(13);
 
 insert into auth.users (
-  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, last_sign_in_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
 )
 values
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'vote1@example.com', '', now(), '{}', '{"name":"Vote 1"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'vote2@example.com', '', now(), '{}', '{"name":"Vote 2"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'vote3@example.com', '', now(), '{}', '{"name":"Vote 3"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'vote4@example.com', '', now(), '{}', '{"name":"Vote 4"}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'vote1@example.com', '', now(), now(), '{}', '{"name":"Vote 1"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'vote2@example.com', '', now(), now(), '{}', '{"name":"Vote 2"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'vote3@example.com', '', now(), now(), '{}', '{"name":"Vote 3"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'vote4@example.com', '', now(), now(), '{}', '{"name":"Vote 4"}', now(), now());
 
 insert into public.groups (id, name, owner_id)
 values ('20000000-0000-0000-0000-000000000001', 'Grupo de votação', '10000000-0000-0000-0000-000000000001');

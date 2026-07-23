@@ -74,7 +74,7 @@ Exemplo de template:
 
 O Supabase deve usar um SMTP de produção. O SMTP configurado no painel do Supabase envia os códigos de login; a API do Resend configurada no app envia os convites de grupo. São fluxos separados.
 
-As respostas do formulário de solicitação são genéricas para não confirmar se um e-mail já possui conta. A sessão SSR fica somente em cookies `HttpOnly`, `SameSite=Lax` e `Secure` em produção; tokens de autenticação não são gravados em `localStorage` ou `sessionStorage`.
+As respostas do formulário de solicitação são genéricas para não confirmar se um e-mail já possui conta. Solicitar o código cria somente um registro pendente no Supabase Auth; o perfil da aplicação é criado pelo trigger apenas depois que o código é validado e o primeiro login gera uma sessão. A sessão SSR fica somente em cookies `HttpOnly`, `SameSite=Lax` e `Secure` em produção; tokens de autenticação não são gravados em `localStorage` ou `sessionStorage`.
 
 ## Resend e domínio
 

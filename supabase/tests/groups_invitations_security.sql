@@ -4,14 +4,14 @@ create extension if not exists pgtap with schema extensions;
 select plan(15);
 
 insert into auth.users (
-  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, last_sign_in_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
 )
 values
-  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'owner@example.com', '', now(), '{}', '{"name":"Owner"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'member@example.com', '', now(), '{}', '{"name":"Member"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'outsider@example.com', '', now(), '{}', '{"name":"Outsider"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'invitee@example.com', '', now(), '{}', '{"name":"Invitee"}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'owner@example.com', '', now(), now(), '{}', '{"name":"Owner"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'member@example.com', '', now(), now(), '{}', '{"name":"Member"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'outsider@example.com', '', now(), now(), '{}', '{"name":"Outsider"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '61000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'invitee@example.com', '', now(), now(), '{}', '{"name":"Invitee"}', now(), now());
 
 create temporary table test_group (id uuid not null);
 

@@ -4,12 +4,12 @@ create extension if not exists pgtap with schema extensions;
 select plan(13);
 
 insert into auth.users (
-  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, last_sign_in_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
 )
 values
-  ('00000000-0000-0000-0000-000000000000', '50000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'rating1@example.com', '', now(), '{}', '{"name":"Rating 1"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '50000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'rating2@example.com', '', now(), '{}', '{"name":"Rating 2"}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '50000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'rating1@example.com', '', now(), now(), '{}', '{"name":"Rating 1"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '50000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'rating2@example.com', '', now(), now(), '{}', '{"name":"Rating 2"}', now(), now());
 
 insert into public.groups (id, name, owner_id)
 values ('51000000-0000-0000-0000-000000000001', 'Grupo de avaliações', '50000000-0000-0000-0000-000000000001');

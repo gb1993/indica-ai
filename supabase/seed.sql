@@ -10,16 +10,17 @@ insert into auth.users (
   email,
   encrypted_password,
   email_confirmed_at,
+  last_sign_in_at,
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
   updated_at
 )
 values
-  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'ana@example.test', '', now(), '{"provider":"email","providers":["email"]}', '{"name":"Ana"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'bruno@example.test', '', now(), '{"provider":"email","providers":["email"]}', '{"name":"Bruno"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'carla@example.test', '', now(), '{"provider":"email","providers":["email"]}', '{"name":"Carla"}', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'diego@example.test', '', now(), '{"provider":"email","providers":["email"]}', '{"name":"Diego"}', now(), now());
+  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'ana@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Ana"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'bruno@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Bruno"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'carla@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Carla"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'diego@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Diego"}', now(), now());
 
 insert into public.groups (id, name, description, owner_id)
 values
