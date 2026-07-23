@@ -99,13 +99,11 @@ async function createAndSendInvitation(groupId: string, email: string) {
 
     if (emailError) throw new Error(emailError.message);
     return { invitationId: invitationId as string };
-  } catch (error) {
+  } catch {
     await supabase.rpc("cancel_group_invitation", {
       p_invitation_id: invitationId,
     });
-    console.error("Invitation email failed", {
-      message: error instanceof Error ? error.message : "unknown error",
-    });
+    console.error("Invitation email failed");
     return { error: "O convite não pôde ser enviado. Verifique a configuração do Resend." };
   }
 }
