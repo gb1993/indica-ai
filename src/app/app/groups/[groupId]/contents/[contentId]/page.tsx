@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
 import { ContentForm } from "@/components/content-form";
+import { ContentRatingForm } from "@/components/content-rating-form";
 import { ContentThumbnail } from "@/components/content-thumbnail";
 import {
   CONTENT_STATUS_META,
@@ -16,7 +17,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 import {
+  completeContent,
   deleteContent,
+  getContentRatingSummary,
   getContentVoteSummary,
   setContentVote,
 } from "../actions";
@@ -34,8 +37,10 @@ type ContentDetails = {
   trailer_url: string | null;
   status: ContentStatus;
   completed_at: string | null;
+  completed_by: string | null;
   created_at: string;
   creator: { name: string } | null;
+  completer: { name: string } | null;
 };
 
 export default async function ContentDetailsPage({
@@ -46,18 +51,19 @@ export default async function ContentDetailsPage({
   const { groupId, contentId } = await params;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: contentRow }, voteSummary] = await Promise.all([
+  const [{ data: group }, { data: contentRow }, voteSummary, ratingSummary] = await Promise.all([
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase
       .from("contents")
-      .select("id, group_id, created_by, type, title, description, thumbnail_url, trailer_url, status, completed_at, created_at, creator:profiles!contents_created_by_fkey(name)")
+      .select("id, group_id, created_by, type, title, description, thumbnail_url, trailer_url, status, completed_at, completed_by, created_at, creator:profiles!contents_created_by_fkey(name), completer:profiles!contents_completed_by_fkey(name)")
       .eq("id", contentId)
       .eq("group_id", groupId)
       .single(),
     getContentVoteSummary(contentId),
+    getContentRatingSummary(contentId),
   ]);
 
-  if (!group || !contentRow || !voteSummary) notFound();
+  if (!group || !contentRow || !voteSummary || !ratingSummary) notFound();
   const content = contentRow as unknown as ContentDetails;
   const type = CONTENT_TYPE_META[content.type];
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
@@ -93,6 +99,18 @@ export default async function ContentDetailsPage({
                 <dt>Cadastrado em</dt>
                 <dd className="font-medium text-[var(--foreground)]">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.created_at))}</dd>
               </div>
+              {content.completed_at ? (
+                <>
+                  <div className="flex justify-between gap-4">
+                    <dt>Concluído em</dt>
+                    <dd className="font-medium text-[var(--foreground)]">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt>Concluído por</dt>
+                    <dd className="font-medium text-[var(--foreground)]">{content.completer?.name ?? "Membro"}</dd>
+                  </div>
+                </>
+              ) : null}
             </dl>
           </div>
         </div>
@@ -174,6 +192,52 @@ export default async function ContentDetailsPage({
           </div>
         ) : null}
       </section>
+
+      {content.status === "approved" ? (
+        <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+          <h2 className="text-xl font-bold">Concluir conteúdo</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Qualquer membro ativo pode informar que este {content.type === "book" ? "livro foi lido" : "conteúdo foi assistido"}.
+          </p>
+          <ActionForm
+            action={completeContent}
+            submitLabel={content.type === "book" ? "Marcar como lido" : "Marcar como assistido"}
+            pendingLabel="Concluindo…"
+            confirmMessage={`Confirmar que este conteúdo foi ${content.type === "book" ? "lido" : "assistido"}?`}
+            className="mt-5 space-y-3"
+            buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+          >
+            <input type="hidden" name="groupId" value={groupId} />
+            <input type="hidden" name="contentId" value={content.id} />
+          </ActionForm>
+        </section>
+      ) : null}
+
+      {content.status === "completed" ? (
+        <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div>
+              <h2 className="text-xl font-bold">Avaliações</h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">Avalie este conteúdo de 1 a 5 estrelas.</p>
+            </div>
+            <div className="rounded-2xl bg-[var(--surface-muted)] px-5 py-3 text-right">
+              <p className="text-2xl font-bold" aria-label={ratingSummary.average_rating === null ? "Sem avaliações" : `Média ${ratingSummary.average_rating.toFixed(1)} de 5`}>
+                {ratingSummary.average_rating === null ? "—" : `${ratingSummary.average_rating.toFixed(1)} ★`}
+              </p>
+              <p className="text-xs text-[var(--muted)]">
+                {ratingSummary.rating_count} {ratingSummary.rating_count === 1 ? "avaliação" : "avaliações"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 border-t pt-6">
+            <ContentRatingForm
+              groupId={groupId}
+              contentId={content.id}
+              currentRating={ratingSummary.current_user_rating}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {content.trailer_url ? (
         <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">

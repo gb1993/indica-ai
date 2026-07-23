@@ -8,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
 
+type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count"> & {
+  ratings: Array<{ rating: number }>;
+};
+
 const sections: Array<{ status: ContentStatus; title: string; empty: string }> = [
   { status: "pending", title: "Aguardando aprovação", empty: "Nenhum conteúdo aguardando aprovação." },
   { status: "approved", title: "Próximos", empty: "Nenhum conteúdo aprovado por enquanto." },
@@ -22,11 +26,21 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
     supabase.from("groups").select("id, name, description").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
     supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "active"),
-    supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status").eq("group_id", groupId).order("created_at", { ascending: false }),
+    supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
   ]);
   if (!group || !membership) notFound();
   const isOwner = membership.role === "owner";
-  const contents = (contentRows ?? []) as unknown as ContentCardData[];
+  const contents = ((contentRows ?? []) as unknown as ContentRow[]).map((content) => {
+    const ratings = content.ratings ?? [];
+    const averageRating = ratings.length
+      ? ratings.reduce((total, item) => total + item.rating, 0) / ratings.length
+      : null;
+    return {
+      ...content,
+      average_rating: averageRating,
+      rating_count: ratings.length,
+    } satisfies ContentCardData;
+  });
   const firstVisibleContentId = sections
     .flatMap((section) => contents.filter((content) => content.status === section.status))
     .at(0)?.id;

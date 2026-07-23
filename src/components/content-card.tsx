@@ -17,6 +17,9 @@ export type ContentCardData = {
   description: string | null;
   thumbnail_url: string | null;
   status: ContentStatus;
+  completed_at: string | null;
+  average_rating: number | null;
+  rating_count: number;
 };
 
 export function ContentCard({ content, eager = false }: { content: ContentCardData; eager?: boolean }) {
@@ -38,7 +41,30 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
           <span className="text-[var(--muted)]">{CONTENT_STATUS_META[content.status].label}</span>
         </div>
         <h3 className="mt-3 line-clamp-2 font-bold group-hover:text-[var(--accent-strong)]">{content.title}</h3>
-        {content.description ? <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--muted)]">{content.description}</p> : null}
+        {content.status === "completed" ? (
+          <dl className="mt-3 space-y-1.5 border-t pt-3 text-xs text-[var(--muted)]">
+            <div className="flex justify-between gap-3">
+              <dt>Conclusão</dt>
+              <dd className="text-[var(--foreground)]">
+                {content.completed_at
+                  ? new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))
+                  : "—"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt>Média</dt>
+              <dd className="text-[var(--foreground)]">
+                {content.average_rating === null ? "Sem avaliações" : `${content.average_rating.toFixed(1)} ★`}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt>Avaliações</dt>
+              <dd className="text-[var(--foreground)]">{content.rating_count}</dd>
+            </div>
+          </dl>
+        ) : content.description ? (
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--muted)]">{content.description}</p>
+        ) : null}
       </div>
     </Link>
   );

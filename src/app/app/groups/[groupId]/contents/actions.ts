@@ -17,6 +17,11 @@ const voteSchema = z.object({
   contentId: uuidSchema,
   vote: z.enum(["true", "false"]).transform((value) => value === "true"),
 });
+const ratingSchema = z.object({
+  groupId: uuidSchema,
+  contentId: uuidSchema,
+  rating: z.coerce.number().int("A avaliação deve ser um número inteiro.").min(1).max(5),
+});
 
 export type ContentVoteSummary = {
   favorable_votes: number;
@@ -25,6 +30,12 @@ export type ContentVoteSummary = {
   current_user_vote: boolean | null;
   favorable_votes_needed: number;
   content_status: "pending" | "approved" | "completed";
+};
+
+export type ContentRatingSummary = {
+  average_rating: number | null;
+  rating_count: number;
+  current_user_rating: number | null;
 };
 
 function isSafeHttpsUrl(value: string) {
@@ -238,4 +249,74 @@ export async function getContentVoteSummary(contentId: string): Promise<ContentV
   if (error || !Array.isArray(data) || !data[0]) return null;
 
   return data[0] as ContentVoteSummary;
+}
+
+export async function completeContent(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const groupId = uuidSchema.safeParse(formString(formData, "groupId"));
+  const contentId = uuidSchema.safeParse(formString(formData, "contentId"));
+  if (!groupId.success || !contentId.success) return actionError("Conteúdo inválido.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("complete_content", {
+    p_content_id: contentId.data,
+  });
+  if (error) {
+    return actionError("Não foi possível concluir o conteúdo. Ele precisa estar aprovado.");
+  }
+
+  revalidatePath(`/app/groups/${groupId.data}`);
+  revalidatePath(`/app/groups/${groupId.data}/contents/${contentId.data}`);
+  return { status: "success", message: "Conteúdo marcado como concluído." };
+}
+
+export async function setContentRating(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = ratingSchema.safeParse({
+    groupId: formString(formData, "groupId"),
+    contentId: formString(formData, "contentId"),
+    rating: formString(formData, "rating"),
+  });
+  if (!parsed.success) return actionError("Escolha uma avaliação inteira entre 1 e 5.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_content_rating", {
+    p_content_id: parsed.data.contentId,
+    p_rating: parsed.data.rating,
+  });
+  if (error) {
+    return actionError("Não foi possível registrar a avaliação. O conteúdo precisa estar concluído.");
+  }
+
+  revalidatePath(`/app/groups/${parsed.data.groupId}`);
+  revalidatePath(`/app/groups/${parsed.data.groupId}/contents/${parsed.data.contentId}`);
+  return { status: "success", message: "Avaliação registrada." };
+}
+
+export async function getContentRatingSummary(contentId: string): Promise<ContentRatingSummary | null> {
+  const parsed = uuidSchema.safeParse(contentId);
+  if (!parsed.success) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_content_rating_summary", {
+    p_content_id: parsed.data,
+  });
+  if (error || !Array.isArray(data) || !data[0]) return null;
+
+  const summary = data[0] as {
+    average_rating: number | string | null;
+    rating_count: number;
+    current_user_rating: number | null;
+  };
+  return {
+    average_rating: summary.average_rating === null ? null : Number(summary.average_rating),
+    rating_count: Number(summary.rating_count),
+    current_user_rating: summary.current_user_rating === null
+      ? null
+      : Number(summary.current_user_rating),
+  };
 }

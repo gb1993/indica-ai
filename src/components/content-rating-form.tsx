@@ -1,0 +1,68 @@
+"use client";
+
+import { useState } from "react";
+
+import { setContentRating } from "@/app/app/groups/[groupId]/contents/actions";
+
+import { ActionForm } from "./action-form";
+
+const ratingLabels: Record<number, string> = {
+  1: "Péssimo",
+  2: "Ruim",
+  3: "Regular",
+  4: "Bom",
+  5: "Excelente",
+};
+
+export function ContentRatingForm({
+  groupId,
+  contentId,
+  currentRating,
+}: {
+  groupId: string;
+  contentId: string;
+  currentRating: number | null;
+}) {
+  const [rating, setRating] = useState(currentRating ?? 0);
+
+  return (
+    <ActionForm
+      action={setContentRating}
+      submitLabel={currentRating ? "Atualizar avaliação" : "Enviar avaliação"}
+      pendingLabel="Salvando…"
+      className="space-y-4"
+      buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+    >
+      <input type="hidden" name="groupId" value={groupId} />
+      <input type="hidden" name="contentId" value={contentId} />
+      <fieldset>
+        <legend className="text-sm font-medium">Sua avaliação</legend>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <label
+              key={value}
+              className={`cursor-pointer rounded-xl border px-3 py-2 text-2xl transition hover:bg-[var(--surface-muted)] ${
+                rating === value ? "border-[var(--accent)] bg-[var(--surface-muted)]" : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="rating"
+                value={value}
+                checked={rating === value}
+                onChange={() => setRating(value)}
+                className="sr-only"
+                required
+              />
+              <span aria-hidden>{value <= rating ? "★" : "☆"}</span>
+              <span className="sr-only">{value} de 5 — {ratingLabels[value]}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <p aria-live="polite" className="text-sm text-[var(--muted)]">
+        {rating ? `${rating} de 5 — ${ratingLabels[rating]}` : "Nenhuma nota selecionada"}
+      </p>
+    </ActionForm>
+  );
+}
