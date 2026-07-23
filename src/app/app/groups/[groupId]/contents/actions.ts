@@ -22,6 +22,18 @@ const ratingSchema = z.object({
   contentId: uuidSchema,
   rating: z.coerce.number().int("A avaliação deve ser um número inteiro.").min(1).max(5),
 });
+const messageContentSchema = z.string()
+  .transform((value) => value.replace(/\s+/g, " ").trim())
+  .pipe(z.string().min(1, "Escreva uma mensagem.").max(2000, "A mensagem deve ter no máximo 2.000 caracteres."))
+  .refine((value) => !/[<>]/.test(value), "A mensagem deve conter somente texto, sem HTML.");
+const newMessageSchema = z.object({
+  groupId: uuidSchema,
+  contentId: uuidSchema,
+  content: messageContentSchema,
+});
+const editMessageSchema = newMessageSchema.extend({
+  messageId: uuidSchema,
+});
 
 export type ContentVoteSummary = {
   favorable_votes: number;
@@ -319,4 +331,74 @@ export async function getContentRatingSummary(contentId: string): Promise<Conten
       ? null
       : Number(summary.current_user_rating),
   };
+}
+
+export async function createContentMessage(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = newMessageSchema.safeParse({
+    groupId: formString(formData, "groupId"),
+    contentId: formString(formData, "contentId"),
+    content: formString(formData, "content"),
+  });
+  if (!parsed.success) return actionError("Revise a mensagem.", parsed.error);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_content_message", {
+    p_content_id: parsed.data.contentId,
+    p_content: parsed.data.content,
+  });
+  if (error) return actionError("Não foi possível publicar a mensagem.");
+
+  revalidatePath(`/app/groups/${parsed.data.groupId}/contents/${parsed.data.contentId}`);
+  return { status: "success", message: "Mensagem publicada." };
+}
+
+export async function updateContentMessage(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = editMessageSchema.safeParse({
+    groupId: formString(formData, "groupId"),
+    contentId: formString(formData, "contentId"),
+    messageId: formString(formData, "messageId"),
+    content: formString(formData, "content"),
+  });
+  if (!parsed.success) return actionError("Revise a mensagem.", parsed.error);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_content_message", {
+    p_message_id: parsed.data.messageId,
+    p_content: parsed.data.content,
+  });
+  if (error) return actionError("Somente o autor pode editar uma mensagem ativa.");
+
+  revalidatePath(`/app/groups/${parsed.data.groupId}/contents/${parsed.data.contentId}`);
+  return { status: "success", message: "Mensagem atualizada." };
+}
+
+export async function deleteContentMessage(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = z.object({
+    groupId: uuidSchema,
+    contentId: uuidSchema,
+    messageId: uuidSchema,
+  }).safeParse({
+    groupId: formString(formData, "groupId"),
+    contentId: formString(formData, "contentId"),
+    messageId: formString(formData, "messageId"),
+  });
+  if (!parsed.success) return actionError("Mensagem inválida.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_content_message", {
+    p_message_id: parsed.data.messageId,
+  });
+  if (error) return actionError("Somente o autor pode excluir a própria mensagem.");
+
+  revalidatePath(`/app/groups/${parsed.data.groupId}/contents/${parsed.data.contentId}`);
+  return { status: "success", message: "Mensagem removida." };
 }

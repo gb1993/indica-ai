@@ -18,10 +18,13 @@ import { createClient } from "@/lib/supabase/server";
 
 import {
   completeContent,
+  createContentMessage,
+  deleteContentMessage,
   deleteContent,
   getContentRatingSummary,
   getContentVoteSummary,
   setContentVote,
+  updateContentMessage,
 } from "../actions";
 
 export const metadata: Metadata = { title: "Detalhes do conteúdo" };
@@ -43,15 +46,38 @@ type ContentDetails = {
   completer: { name: string } | null;
 };
 
+type ContentMessage = {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  author: { name: string } | null;
+};
+
+const MESSAGES_PER_PAGE = 10;
+
 export default async function ContentDetailsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ groupId: string; contentId: string }>;
+  searchParams: Promise<{ messagesPage?: string }>;
 }) {
   const { groupId, contentId } = await params;
+  const requestedPage = Number((await searchParams).messagesPage ?? "1");
+  const messagesPage = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const messagesFrom = (messagesPage - 1) * MESSAGES_PER_PAGE;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: contentRow }, voteSummary, ratingSummary] = await Promise.all([
+  const [
+    { data: group },
+    { data: contentRow },
+    voteSummary,
+    ratingSummary,
+    { data: messageRows, count: messageCount, error: messagesError },
+  ] = await Promise.all([
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase
       .from("contents")
@@ -61,12 +87,20 @@ export default async function ContentDetailsPage({
       .single(),
     getContentVoteSummary(contentId),
     getContentRatingSummary(contentId),
+    supabase
+      .from("content_messages")
+      .select("id, user_id, content, created_at, updated_at, deleted_at, author:profiles!content_messages_user_id_fkey(name)", { count: "exact" })
+      .eq("content_id", contentId)
+      .order("created_at", { ascending: false })
+      .range(messagesFrom, messagesFrom + MESSAGES_PER_PAGE - 1),
   ]);
 
   if (!group || !contentRow || !voteSummary || !ratingSummary) notFound();
   const content = contentRow as unknown as ContentDetails;
   const type = CONTENT_TYPE_META[content.type];
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
+  const messages = (messageRows ?? []) as unknown as ContentMessage[];
+  const totalMessagePages = Math.max(1, Math.ceil((messageCount ?? 0) / MESSAGES_PER_PAGE));
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-12">
@@ -258,6 +292,110 @@ export default async function ContentDetailsPage({
           </div>
         </section>
       ) : null}
+
+      <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+        <div>
+          <h2 className="text-xl font-bold">Conversa</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">Esta conversa é privada para os membros ativos do grupo.</p>
+        </div>
+
+        <ActionForm
+          action={createContentMessage}
+          submitLabel="Publicar mensagem"
+          pendingLabel="Publicando…"
+          resetOnSuccess
+          className="mt-6 space-y-3"
+          buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+        >
+          <input type="hidden" name="groupId" value={groupId} />
+          <input type="hidden" name="contentId" value={content.id} />
+          <label htmlFor="new-message" className="sr-only">Nova mensagem</label>
+          <textarea
+            id="new-message"
+            name="content"
+            required
+            maxLength={2000}
+            rows={4}
+            placeholder="Escreva uma mensagem…"
+            className="w-full resize-y rounded-xl border bg-[var(--surface-muted)] px-4 py-3"
+          />
+        </ActionForm>
+
+        <div className="mt-8 border-t pt-6">
+          {messagesError ? (
+            <p role="alert" className="rounded-xl bg-red-500/10 p-4 text-sm text-red-500">Não foi possível carregar as mensagens.</p>
+          ) : messages.length ? (
+            <ul className="space-y-4">
+              {messages.map((message) => {
+                const isAuthor = message.user_id === authData.user?.id;
+                const wasEdited = !message.deleted_at
+                  && new Date(message.updated_at).getTime() > new Date(message.created_at).getTime();
+                return (
+                  <li key={message.id} className="rounded-2xl border bg-[var(--surface-muted)] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
+                      <span className="font-semibold text-[var(--foreground)]">{message.author?.name ?? "Membro"}</span>
+                      <time dateTime={message.created_at}>
+                        {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
+                      </time>
+                    </div>
+                    {message.deleted_at ? (
+                      <p className="mt-3 italic text-[var(--muted)]">Mensagem removida</p>
+                    ) : (
+                      <>
+                        <p className="mt-3 whitespace-pre-wrap break-words">{message.content}</p>
+                        {wasEdited ? <p className="mt-2 text-xs text-[var(--muted)]">Editada</p> : null}
+                        {isAuthor ? (
+                          <div className="mt-4 grid gap-3 border-t pt-4 md:grid-cols-[1fr_auto]">
+                            <ActionForm
+                              action={updateContentMessage}
+                              submitLabel="Salvar edição"
+                              pendingLabel="Salvando…"
+                              className="space-y-2"
+                              buttonClassName="rounded-lg border bg-[var(--surface)] px-3 py-2 text-sm font-semibold disabled:opacity-60"
+                            >
+                              <input type="hidden" name="groupId" value={groupId} />
+                              <input type="hidden" name="contentId" value={content.id} />
+                              <input type="hidden" name="messageId" value={message.id} />
+                              <label htmlFor={`message-${message.id}`} className="sr-only">Editar mensagem</label>
+                              <textarea id={`message-${message.id}`} name="content" required maxLength={2000} rows={2} defaultValue={message.content} className="w-full resize-y rounded-lg border bg-[var(--surface)] px-3 py-2 text-sm" />
+                            </ActionForm>
+                            <ActionForm
+                              action={deleteContentMessage}
+                              submitLabel="Excluir"
+                              pendingLabel="Excluindo…"
+                              confirmMessage="Excluir esta mensagem? Ela continuará aparecendo como removida."
+                              className="space-y-2"
+                              buttonClassName="rounded-lg px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-60"
+                            >
+                              <input type="hidden" name="groupId" value={groupId} />
+                              <input type="hidden" name="contentId" value={content.id} />
+                              <input type="hidden" name="messageId" value={message.id} />
+                            </ActionForm>
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-[var(--muted)]">Nenhuma mensagem ainda. Inicie a conversa.</p>
+          )}
+
+          {!messagesError && totalMessagePages > 1 ? (
+            <nav aria-label="Paginação das mensagens" className="mt-6 flex items-center justify-between gap-4 text-sm">
+              {messagesPage > 1 ? (
+                <Link href={`?messagesPage=${messagesPage - 1}`} className="rounded-lg border px-3 py-2 hover:bg-[var(--surface-muted)]">← Mais recentes</Link>
+              ) : <span />}
+              <span className="text-[var(--muted)]">Página {Math.min(messagesPage, totalMessagePages)} de {totalMessagePages}</span>
+              {messagesPage < totalMessagePages ? (
+                <Link href={`?messagesPage=${messagesPage + 1}`} className="rounded-lg border px-3 py-2 hover:bg-[var(--surface-muted)]">Mais antigas →</Link>
+              ) : <span />}
+            </nav>
+          ) : null}
+        </div>
+      </section>
 
       {canManage ? (
         <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-7 sm:p-9">

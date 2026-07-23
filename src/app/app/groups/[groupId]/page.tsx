@@ -66,6 +66,11 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
         </div>
       </section>
 
+      <nav aria-label="Seções do grupo" className="mt-6 flex gap-2 border-b">
+        <span aria-current="page" className="border-b-2 border-[var(--accent)] px-4 py-3 text-sm font-bold">Conteúdos</span>
+        <Link href={`/app/groups/${groupId}/activities`} className="px-4 py-3 text-sm text-[var(--muted)] hover:text-[var(--foreground)]">Atividades</Link>
+      </nav>
+
       <div className="mt-10 space-y-12">
         {sections.map((section) => {
           const items = contents.filter((content) => content.status === section.status);
