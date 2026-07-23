@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentForm } from "@/components/content-form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,10 +23,8 @@ export default async function NewContentPage({
   if (!group) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-12">
-      <Link href={`/app/groups/${groupId}`} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">
-        ← Voltar para {group.name}
-      </Link>
+    <main id="main-content" className="mx-auto max-w-2xl px-5 py-10 sm:py-12">
+      <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Cadastrar conteúdo" }]} />
       <section className="mt-6 rounded-3xl border bg-[var(--surface)] p-7 sm:p-9">
         <h1 className="text-3xl font-bold tracking-tight">Cadastrar conteúdo</h1>
         <p className="mt-2 text-[var(--muted)]">A indicação ficará aguardando aprovação.</p>

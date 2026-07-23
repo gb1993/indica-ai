@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentCard, type ContentCardData } from "@/components/content-card";
-import type { ContentStatus } from "@/lib/content";
+import { EmptyState } from "@/components/empty-state";
+import { GroupTabs, type GroupTab } from "@/components/group-tabs";
+import { CONTENT_TYPES, CONTENT_TYPE_META, type ContentStatus, type ContentType } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
@@ -18,8 +21,19 @@ const sections: Array<{ status: ContentStatus; title: string; empty: string }> =
   { status: "completed", title: "Concluídos", empty: "Nenhum conteúdo concluído por enquanto." },
 ];
 
-export default async function GroupPage({ params }: { params: Promise<{ groupId: string }> }) {
+export default async function GroupPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ groupId: string }>;
+  searchParams: Promise<{ tab?: string; type?: string }>;
+}) {
   const { groupId } = await params;
+  const query = await searchParams;
+  const activeTab: GroupTab = ["pending", "approved", "completed"].includes(query.tab ?? "")
+    ? query.tab as GroupTab
+    : "overview";
+  const activeType = CONTENT_TYPES.includes(query.type as ContentType) ? query.type as ContentType : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   const [{ data: group }, { data: membership }, { count }, { data: contentRows }] = await Promise.all([
@@ -41,13 +55,17 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
       rating_count: ratings.length,
     } satisfies ContentCardData;
   });
-  const firstVisibleContentId = sections
-    .flatMap((section) => contents.filter((content) => content.status === section.status))
+  const filteredContents = activeType ? contents.filter((content) => content.type === activeType) : contents;
+  const visibleSections = activeTab === "overview"
+    ? sections
+    : sections.filter((section) => section.status === activeTab);
+  const firstVisibleContentId = visibleSections
+    .flatMap((section) => filteredContents.filter((content) => content.status === section.status))
     .at(0)?.id;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12">
-      <Link href="/dashboard" className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← Voltar aos grupos</Link>
+    <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
+      <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name }]} />
       <section className="mt-6 rounded-3xl border bg-[var(--surface)] p-7 sm:p-10">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
           <div>
@@ -66,14 +84,27 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
         </div>
       </section>
 
-      <nav aria-label="Seções do grupo" className="mt-6 flex gap-2 border-b">
-        <span aria-current="page" className="border-b-2 border-[var(--accent)] px-4 py-3 text-sm font-bold">Conteúdos</span>
-        <Link href={`/app/groups/${groupId}/activities`} className="px-4 py-3 text-sm text-[var(--muted)] hover:text-[var(--foreground)]">Atividades</Link>
-      </nav>
+      <GroupTabs groupId={groupId} active={activeTab} />
+
+      <section aria-label="Filtrar conteúdos por tipo" className="mt-6">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <Link href={activeTab === "overview" ? `/app/groups/${groupId}` : `/app/groups/${groupId}?tab=${activeTab}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${!activeType ? "bg-[var(--accent)] font-bold text-[#07150c]" : "bg-[var(--surface)]"}`}>Todos</Link>
+          {CONTENT_TYPES.map((type) => {
+            const params = new URLSearchParams();
+            if (activeTab !== "overview") params.set("tab", activeTab);
+            params.set("type", type);
+            return (
+              <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${activeType === type ? "bg-[var(--accent)] font-bold text-[#07150c]" : "bg-[var(--surface)]"}`}>
+                <span aria-hidden>{CONTENT_TYPE_META[type].icon}</span> {CONTENT_TYPE_META[type].label}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       <div className="mt-10 space-y-12">
-        {sections.map((section) => {
-          const items = contents.filter((content) => content.status === section.status);
+        {visibleSections.map((section) => {
+          const items = filteredContents.filter((content) => content.status === section.status);
           return (
             <section key={section.status}>
               <div className="mb-4 flex items-end justify-between gap-4">
@@ -91,7 +122,7 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed bg-[var(--surface)] p-7 text-sm text-[var(--muted)]">{section.empty}</div>
+                <EmptyState title={section.title} description={activeType ? `Nenhum conteúdo do tipo ${CONTENT_TYPE_META[activeType].label.toLowerCase()} nesta seção.` : section.empty} />
               )}
             </section>
           );

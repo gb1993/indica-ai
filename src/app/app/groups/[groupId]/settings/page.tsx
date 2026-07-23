@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { GroupForm } from "@/components/group-form";
 import { createClient } from "@/lib/supabase/server";
 
-import { deleteGroup, updateGroup } from "../../actions";
+import { deleteGroup } from "../../actions";
 
 export const metadata: Metadata = { title: "Configurações do grupo" };
 
@@ -24,27 +25,11 @@ export default async function GroupSettingsPage({
   if (!group || membership?.role !== "owner") notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-12">
-      <Link href={`/app/groups/${groupId}`} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← Voltar ao grupo</Link>
+    <main id="main-content" className="mx-auto max-w-2xl px-5 py-10 sm:py-12">
+      <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Configurações" }]} />
       <section className="mt-6 rounded-3xl border bg-[var(--surface)] p-7 sm:p-9">
         <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-        <ActionForm
-          action={updateGroup}
-          submitLabel="Salvar alterações"
-          pendingLabel="Salvando…"
-          className="mt-6 space-y-5"
-          buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
-        >
-          <input type="hidden" name="groupId" value={groupId} />
-          <div>
-            <label htmlFor="name" className="mb-2 block text-sm font-medium">Nome</label>
-            <input id="name" name="name" required minLength={2} maxLength={80} defaultValue={group.name} className="w-full rounded-xl border bg-[var(--surface-muted)] px-4 py-3" />
-          </div>
-          <div>
-            <label htmlFor="description" className="mb-2 block text-sm font-medium">Descrição</label>
-            <textarea id="description" name="description" maxLength={500} rows={4} defaultValue={group.description ?? ""} className="w-full resize-y rounded-xl border bg-[var(--surface-muted)] px-4 py-3" />
-          </div>
-        </ActionForm>
+        <div className="mt-6"><GroupForm group={group} /></div>
       </section>
       <section className="mt-6 rounded-3xl border border-red-500/30 bg-red-500/5 p-7">
         <h2 className="text-lg font-bold text-red-500">Excluir grupo</h2>

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { GroupTabs } from "@/components/group-tabs";
+import { InvitationForm } from "@/components/invitation-form";
 import { createClient } from "@/lib/supabase/server";
 
 import {
   cancelInvitation,
   removeMember,
   resendInvitation,
-  sendInvitation,
 } from "../../actions";
 
 export const metadata: Metadata = { title: "Membros do grupo" };
@@ -66,35 +67,25 @@ export default async function GroupMembersPage({
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-12">
-      <Link href={`/app/groups/${groupId}`} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← Voltar para {group.name}</Link>
+    <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+      <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Membros" }]} />
       <div className="mt-6">
         <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
         <p className="mt-2 text-[var(--muted)]">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"}</p>
       </div>
+      <GroupTabs groupId={groupId} active="members" />
       {isOwner && (
-        <section className="mb-6 rounded-2xl border bg-[var(--surface)] p-6">
+        <section className="mb-6 mt-8 rounded-2xl border bg-[var(--surface)] p-6">
           <h2 className="font-bold">Convidar por e-mail</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">O link será válido por 5 minutos e somente para o e-mail informado.</p>
-          <ActionForm
-            action={sendInvitation}
-            submitLabel="Enviar convite"
-            pendingLabel="Enviando…"
-            resetOnSuccess
-            className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
-            buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#07150c] disabled:opacity-60"
-          >
-            <input type="hidden" name="groupId" value={groupId} />
-            <label htmlFor="invite-email" className="sr-only">E-mail do convidado</label>
-            <input id="invite-email" name="email" type="email" required maxLength={254} placeholder="amigo@exemplo.com" className="min-w-0 flex-1 rounded-xl border bg-[var(--surface-muted)] px-4 py-3" />
-          </ActionForm>
+          <InvitationForm groupId={groupId} />
         </section>
       )}
 
       <section className="overflow-hidden rounded-2xl border bg-[var(--surface)]">
         <ul className="divide-y">
           {members.map((member) => (
-            <li key={member.id} className="flex items-center justify-between gap-4 p-5">
+            <li key={member.id} className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="truncate font-semibold">{member.user?.name ?? "Usuário"}</p>

@@ -1,12 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import {
   initialActionState,
   type ActionState,
 } from "@/lib/action-state";
+
+import { ConfirmationDialog } from "./confirmation-dialog";
+import { Toast } from "./toast";
 
 type ActionHandler = (
   previousState: ActionState,
@@ -33,10 +36,15 @@ export function ActionForm({
   resetOnSuccess?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const confirmedRef = useRef(false);
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (previousState: ActionState, formData: FormData) => {
+      setToastVisible(false);
       const result = await action(previousState, formData);
       if (result.status === "success" && resetOnSuccess) formRef.current?.reset();
+      if (result.message) setToastVisible(true);
       return result;
     },
     initialActionState,
@@ -44,38 +52,50 @@ export function ActionForm({
   const fieldMessages = Object.values(state.fieldErrors ?? {}).flat();
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className={className}
-      onSubmit={(event) => {
-        if (confirmMessage && !window.confirm(confirmMessage)) event.preventDefault();
-      }}
-    >
-      {children}
-      <button
-        type="submit"
-        disabled={pending}
-        className={buttonClassName}
+    <>
+      <form
+        ref={formRef}
+        action={formAction}
+        className={className}
+        aria-busy={pending}
+        onSubmit={(event) => {
+          if (confirmMessage && !confirmedRef.current) {
+            event.preventDefault();
+            setConfirmationOpen(true);
+            return;
+          }
+          confirmedRef.current = false;
+        }}
       >
-        {pending ? pendingLabel : submitLabel}
-      </button>
-      {state.message ? (
-        <p
-          role={state.status === "error" ? "alert" : "status"}
-          aria-live="polite"
-          className={`basis-full text-sm ${
-            state.status === "error" ? "text-red-500" : "text-emerald-500"
-          }`}
+        {children}
+        <button
+          type="submit"
+          disabled={pending}
+          className={buttonClassName}
         >
-          {state.message}
-        </p>
+          {pending ? pendingLabel : submitLabel}
+        </button>
+        {fieldMessages.length ? (
+          <ul role="alert" className="basis-full list-inside list-disc space-y-1 text-sm text-red-600 dark:text-red-400">
+            {fieldMessages.map((message, index) => <li key={`${message}-${index}`}>{message}</li>)}
+          </ul>
+        ) : null}
+      </form>
+      {confirmMessage ? (
+        <ConfirmationDialog
+          open={confirmationOpen}
+          message={confirmMessage}
+          onCancel={() => setConfirmationOpen(false)}
+          onConfirm={() => {
+            confirmedRef.current = true;
+            setConfirmationOpen(false);
+            formRef.current?.requestSubmit();
+          }}
+        />
       ) : null}
-      {fieldMessages.length ? (
-        <ul className="basis-full list-inside list-disc space-y-1 text-sm text-red-500">
-          {fieldMessages.map((message) => <li key={message}>{message}</li>)}
-        </ul>
+      {toastVisible && state.message && state.status !== "idle" ? (
+        <Toast status={state.status} message={state.message} onDismiss={() => setToastVisible(false)} />
       ) : null}
-    </form>
+    </>
   );
 }

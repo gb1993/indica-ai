@@ -1,12 +1,8 @@
 import Link from "next/link";
 
-import {
-  CONTENT_STATUS_META,
-  CONTENT_TYPE_META,
-  type ContentStatus,
-  type ContentType,
-} from "@/lib/content";
+import type { ContentStatus, ContentType } from "@/lib/content";
 
+import { ContentStatusBadge, ContentTypeBadge } from "./content-badges";
 import { ContentThumbnail } from "./content-thumbnail";
 
 export type ContentCardData = {
@@ -23,8 +19,6 @@ export type ContentCardData = {
 };
 
 export function ContentCard({ content, eager = false }: { content: ContentCardData; eager?: boolean }) {
-  const type = CONTENT_TYPE_META[content.type];
-
   return (
     <Link
       href={`/app/groups/${content.group_id}/contents/${content.id}`}
@@ -35,10 +29,8 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
       </div>
       <div className="p-4">
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-[var(--surface-muted)] px-2.5 py-1">
-            <span aria-hidden>{type.icon}</span> {type.label}
-          </span>
-          <span className="text-[var(--muted)]">{CONTENT_STATUS_META[content.status].label}</span>
+          <ContentTypeBadge type={content.type} />
+          <ContentStatusBadge status={content.status} />
         </div>
         <h3 className="mt-3 line-clamp-2 font-bold group-hover:text-[var(--accent-strong)]">{content.title}</h3>
         {content.status === "completed" ? (

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { GroupTabs } from "@/components/group-tabs";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Atividades do grupo" };
@@ -73,17 +75,14 @@ export default async function GroupActivitiesPage({
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / ACTIVITIES_PER_PAGE));
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-12">
-      <Link href="/dashboard" className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← Voltar aos grupos</Link>
+    <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+      <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Atividades" }]} />
       <section className="mt-6 rounded-3xl border bg-[var(--surface)] p-7 sm:p-9">
         <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
         <p className="mt-2 text-[var(--muted)]">Histórico privado das atividades do grupo.</p>
       </section>
 
-      <nav aria-label="Seções do grupo" className="mt-6 flex gap-2 border-b">
-        <Link href={`/app/groups/${groupId}`} className="px-4 py-3 text-sm text-[var(--muted)] hover:text-[var(--foreground)]">Conteúdos</Link>
-        <span aria-current="page" className="border-b-2 border-[var(--accent)] px-4 py-3 text-sm font-bold">Atividades</span>
-      </nav>
+      <GroupTabs groupId={groupId} active="activities" />
 
       <section className="mt-8">
         <h2 className="text-2xl font-bold">Atividades</h2>

@@ -3,12 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { ContentStatusBadge, ContentTypeBadge } from "@/components/content-badges";
 import { ContentForm } from "@/components/content-form";
 import { ContentRatingForm } from "@/components/content-rating-form";
 import { ContentThumbnail } from "@/components/content-thumbnail";
 import {
-  CONTENT_STATUS_META,
-  CONTENT_TYPE_META,
   type ContentStatus,
   type ContentType,
   youtubeEmbedUrl,
@@ -97,16 +97,13 @@ export default async function ContentDetailsPage({
 
   if (!group || !contentRow || !voteSummary || !ratingSummary) notFound();
   const content = contentRow as unknown as ContentDetails;
-  const type = CONTENT_TYPE_META[content.type];
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
   const messages = (messageRows ?? []) as unknown as ContentMessage[];
   const totalMessagePages = Math.max(1, Math.ceil((messageCount ?? 0) / MESSAGES_PER_PAGE));
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-12">
-      <Link href={`/app/groups/${groupId}`} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">
-        ← Voltar para {group.name}
-      </Link>
+    <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+      <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: content.title }]} />
 
       <article className="mt-6 overflow-hidden rounded-3xl border bg-[var(--surface)]">
         <div className="grid md:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
@@ -115,12 +112,8 @@ export default async function ContentDetailsPage({
           </div>
           <div className="p-7 sm:p-9">
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1.5">
-                <span aria-hidden>{type.icon}</span> {type.label}
-              </span>
-              <span className="rounded-full border px-3 py-1.5 text-[var(--muted)]">
-                {CONTENT_STATUS_META[content.status].label}
-              </span>
+              <ContentTypeBadge type={content.type} />
+              <ContentStatusBadge status={content.status} />
             </div>
             <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">{content.title}</h1>
             {content.description ? <p className="mt-5 whitespace-pre-wrap leading-relaxed text-[var(--muted)]">{content.description}</p> : null}
