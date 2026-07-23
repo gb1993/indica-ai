@@ -1,37 +1,33 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { createClient } from "@/lib/supabase/server";
-
 import "./globals.css";
+
+const themeBootScript = `
+  (function () {
+    try {
+      var savedTheme = localStorage.getItem('indica-ai-theme');
+      var isDark = savedTheme !== 'light';
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    } catch (_) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    }
+  })();
+`;
 
 export const metadata: Metadata = {
   title: { default: "Indica Aí", template: "%s | Indica Aí" },
   description: "Escolha, vote e compartilhe conteúdos com seus amigos.",
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  let theme: "dark" | "light" = "dark";
-
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("theme")
-        .eq("id", data.user.id)
-        .maybeSingle();
-
-      if (profile?.theme === "light") theme = "light";
-    }
-  } catch {
-    // Keep the safe dark default while the project is not configured yet.
-  }
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={theme} suppressHydrationWarning>
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );

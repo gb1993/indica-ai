@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PageNotice } from "@/components/page-notice";
+import { ActionForm } from "@/components/action-form";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -39,13 +39,10 @@ function invitationStatus(invitation: Invitation) {
 
 export default async function GroupMembersPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const { groupId } = await params;
-  const { error, success } = await searchParams;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   const [{ data: group }, { data: ownMembership }, { data: memberRows }] = await Promise.all([
@@ -75,18 +72,22 @@ export default async function GroupMembersPage({
         <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
         <p className="mt-2 text-[var(--muted)]">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"}</p>
       </div>
-      <div className="mt-6"><PageNotice error={error} success={success} /></div>
-
       {isOwner && (
         <section className="mb-6 rounded-2xl border bg-[var(--surface)] p-6">
           <h2 className="font-bold">Convidar por e-mail</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">O link será válido por 5 minutos e somente para o e-mail informado.</p>
-          <form action={sendInvitation} className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <ActionForm
+            action={sendInvitation}
+            submitLabel="Enviar convite"
+            pendingLabel="Enviando…"
+            resetOnSuccess
+            className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
+            buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#07150c] disabled:opacity-60"
+          >
             <input type="hidden" name="groupId" value={groupId} />
             <label htmlFor="invite-email" className="sr-only">E-mail do convidado</label>
             <input id="invite-email" name="email" type="email" required maxLength={254} placeholder="amigo@exemplo.com" className="min-w-0 flex-1 rounded-xl border bg-[var(--surface-muted)] px-4 py-3" />
-            <button type="submit" className="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-bold text-[#07150c]">Enviar convite</button>
-          </form>
+          </ActionForm>
         </section>
       )}
 
@@ -102,11 +103,16 @@ export default async function GroupMembersPage({
                 <p className="truncate text-sm text-[var(--muted)]">{member.user?.email}</p>
               </div>
               {isOwner && member.role !== "owner" && (
-                <form action={removeMember}>
+                <ActionForm
+                  action={removeMember}
+                  submitLabel="Remover"
+                  pendingLabel="Removendo…"
+                  confirmMessage="Remover este membro do grupo?"
+                  buttonClassName="rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 disabled:opacity-60"
+                >
                   <input type="hidden" name="groupId" value={groupId} />
                   <input type="hidden" name="membershipId" value={member.id} />
-                  <button type="submit" className="rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10">Remover</button>
-                </form>
+                </ActionForm>
               )}
             </li>
           ))}
@@ -130,17 +136,26 @@ export default async function GroupMembersPage({
                       </div>
                       {canManage && (
                         <div className="flex gap-2">
-                          <form action={resendInvitation}>
+                          <ActionForm
+                            action={resendInvitation}
+                            submitLabel="Reenviar"
+                            pendingLabel="Reenviando…"
+                            buttonClassName="rounded-lg border px-3 py-2 text-sm hover:bg-[var(--surface-muted)] disabled:opacity-60"
+                          >
                             <input type="hidden" name="groupId" value={groupId} />
                             <input type="hidden" name="invitationId" value={invitation.id} />
-                            <button type="submit" className="rounded-lg border px-3 py-2 text-sm hover:bg-[var(--surface-muted)]">Reenviar</button>
-                          </form>
+                          </ActionForm>
                           {status === "Pendente" && (
-                            <form action={cancelInvitation}>
+                            <ActionForm
+                              action={cancelInvitation}
+                              submitLabel="Cancelar"
+                              pendingLabel="Cancelando…"
+                              confirmMessage="Cancelar este convite?"
+                              buttonClassName="rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 disabled:opacity-60"
+                            >
                               <input type="hidden" name="groupId" value={groupId} />
                               <input type="hidden" name="invitationId" value={invitation.id} />
-                              <button type="submit" className="rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10">Cancelar</button>
-                            </form>
+                            </ActionForm>
                           )}
                         </div>
                       )}

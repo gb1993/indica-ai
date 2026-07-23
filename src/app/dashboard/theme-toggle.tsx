@@ -1,30 +1,29 @@
 "use client";
 
-import { useOptimistic } from "react";
+type Theme = "dark" | "light";
 
-import { updateTheme } from "./actions";
+const THEME_STORAGE_KEY = "indica-ai-theme";
 
-export function ThemeToggle({ theme }: { theme: "dark" | "light" }) {
-  const [optimisticTheme, setOptimisticTheme] = useOptimistic(theme);
-  const nextTheme = optimisticTheme === "dark" ? "light" : "dark";
+export function ThemeToggle() {
+  function toggleTheme() {
+    const nextTheme: Theme = document.documentElement.classList.contains("dark")
+      ? "light"
+      : "dark";
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+    document.documentElement.style.colorScheme = nextTheme;
+  }
 
   return (
-    <form
-      action={async (formData) => {
-        setOptimisticTheme(nextTheme);
-        document.documentElement.classList.toggle("dark", nextTheme === "dark");
-        await updateTheme(formData);
-      }}
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label="Alternar tema claro ou escuro"
+      title="Alternar tema"
+      className="grid size-10 place-items-center rounded-xl border bg-[var(--surface-muted)] text-lg transition"
     >
-      <input type="hidden" name="theme" value={nextTheme} />
-      <button
-        type="submit"
-        aria-label={`Usar tema ${nextTheme === "dark" ? "escuro" : "claro"}`}
-        title={`Usar tema ${nextTheme === "dark" ? "escuro" : "claro"}`}
-        className="grid size-10 place-items-center rounded-xl border bg-[var(--surface-muted)] text-lg transition"
-      >
-        <span aria-hidden="true">{optimisticTheme === "dark" ? "☀" : "☾"}</span>
-      </button>
-    </form>
+      <span aria-hidden="true" className="dark:hidden">☾</span>
+      <span aria-hidden="true" className="hidden dark:inline">☀</span>
+    </button>
   );
 }

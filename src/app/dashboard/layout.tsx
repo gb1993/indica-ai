@@ -14,13 +14,12 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, email, avatar_url, theme")
+    .select("name, email, avatar_url")
     .eq("id", authData.user.id)
     .single();
 
   const name = profile?.name ?? authData.user.email?.split("@")[0] ?? "Usuário";
   const email = profile?.email ?? authData.user.email ?? "";
-  const theme = profile?.theme === "light" ? "light" : "dark";
   const initial = name.trim().charAt(0).toUpperCase() || "U";
 
   return (
@@ -32,7 +31,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
             <span>Indica Aí</span>
           </Link>
           <div className="flex items-center gap-2">
-            <ThemeToggle theme={theme} />
+            <ThemeToggle />
             <details className="relative">
               <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl p-1.5 pr-3 transition hover:bg-[var(--surface-muted)]">
                 {profile?.avatar_url ? (
