@@ -7,6 +7,10 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentStatusBadge, ContentTypeBadge } from "@/components/content-badges";
 import { ContentForm } from "@/components/content-form";
 import { ContentRatingForm } from "@/components/content-rating-form";
+import {
+  ContentReviews,
+  type ContentReview,
+} from "@/components/content-reviews";
 import { ContentThumbnail } from "@/components/content-thumbnail";
 import {
   type ContentStatus,
@@ -56,6 +60,15 @@ type ContentMessage = {
   author: { name: string } | null;
 };
 
+type ContentRating = {
+  id: string;
+  user_id: string;
+  rating: number;
+  comment: string | null;
+  updated_at: string;
+  author: { name: string } | null;
+};
+
 const MESSAGES_PER_PAGE = 10;
 
 export default async function ContentDetailsPage({
@@ -76,6 +89,7 @@ export default async function ContentDetailsPage({
     { data: contentRow },
     voteSummary,
     ratingSummary,
+    { data: ratingRows, error: ratingsError },
     { data: messageRows, count: messageCount, error: messagesError },
   ] = await Promise.all([
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
@@ -88,6 +102,11 @@ export default async function ContentDetailsPage({
     getContentVoteSummary(contentId),
     getContentRatingSummary(contentId),
     supabase
+      .from("content_ratings")
+      .select("id, user_id, rating, comment, updated_at, author:profiles!content_ratings_user_id_fkey(name)")
+      .eq("content_id", contentId)
+      .order("updated_at", { ascending: false }),
+    supabase
       .from("content_messages")
       .select("id, user_id, content, created_at, updated_at, deleted_at, author:profiles!content_messages_user_id_fkey(name)", { count: "exact" })
       .eq("content_id", contentId)
@@ -99,6 +118,15 @@ export default async function ContentDetailsPage({
   const content = contentRow as unknown as ContentDetails;
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
   const messages = (messageRows ?? []) as unknown as ContentMessage[];
+  const ratings = (ratingRows ?? []) as unknown as ContentRating[];
+  const reviews: ContentReview[] = ratings.map((rating) => ({
+    id: rating.id,
+    rating: rating.rating,
+    comment: rating.comment,
+    updatedAt: rating.updated_at,
+    memberName: rating.author?.name ?? "Membro",
+  }));
+  const currentUserRating = ratings.find((rating) => rating.user_id === authData.user?.id);
   const totalMessagePages = Math.max(1, Math.ceil((messageCount ?? 0) / MESSAGES_PER_PAGE));
 
   return (
@@ -257,10 +285,20 @@ export default async function ContentDetailsPage({
             </div>
           </div>
           <div className="mt-6 border-t pt-6">
+            {ratingsError ? (
+              <p role="alert" className="rounded-xl bg-red-500/10 p-4 text-sm text-red-500">
+                Não foi possível carregar as avaliações.
+              </p>
+            ) : (
+              <ContentReviews reviews={reviews} />
+            )}
+          </div>
+          <div className="mt-6 border-t pt-6">
             <ContentRatingForm
               groupId={groupId}
               contentId={content.id}
               currentRating={ratingSummary.current_user_rating}
+              currentComment={currentUserRating?.comment ?? null}
             />
           </div>
         </section>

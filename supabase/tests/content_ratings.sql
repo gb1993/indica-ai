@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(16);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, last_sign_in_at,
@@ -77,8 +77,8 @@ select throws_ok(
   'nota decimal é rejeitada'
 );
 select lives_ok(
-  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 4)$$,
-  'membro ativo avalia conteúdo concluído'
+  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 4, 'Uma ótima leitura para o grupo.')$$,
+  'membro ativo avalia conteúdo concluído com comentário'
 );
 select is(
   (select count(*)::integer from public.content_ratings where content_id = '53000000-0000-0000-0000-000000000002' and user_id = auth.uid()),
@@ -90,9 +90,25 @@ select lives_ok(
   'membro pode alterar a própria avaliação'
 );
 select results_eq(
-  $$select rating, count(*) over ()::integer from public.content_ratings where content_id = '53000000-0000-0000-0000-000000000002' and user_id = '50000000-0000-0000-0000-000000000001'$$,
-  $$values (5::smallint, 1::integer)$$,
-  'alterar a avaliação atualiza a mesma linha sem duplicá-la'
+  $$select rating, comment, count(*) over ()::integer from public.content_ratings where content_id = '53000000-0000-0000-0000-000000000002' and user_id = '50000000-0000-0000-0000-000000000001'$$,
+  $$values (5::smallint, null::text, 1::integer)$$,
+  'alterar a avaliação atualiza a mesma linha, inclusive removendo o comentário'
+);
+select throws_ok(
+  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 5, repeat('a', 501))$$,
+  'P0001',
+  'invalid rating comment',
+  'comentário com mais de 500 caracteres é rejeitado'
+);
+select throws_ok(
+  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 5, '<b>texto</b>')$$,
+  'P0001',
+  'invalid rating comment',
+  'HTML no comentário é rejeitado'
+);
+select lives_ok(
+  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 5, '  comentário   normalizado  ')$$,
+  'espaços do comentário são normalizados'
 );
 
 select set_config('request.jwt.claim.sub', '50000000-0000-0000-0000-000000000002', true);

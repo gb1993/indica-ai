@@ -21,6 +21,10 @@ const ratingSchema = z.object({
   groupId: uuidSchema,
   contentId: uuidSchema,
   rating: z.coerce.number().int("A avaliação deve ser um número inteiro.").min(1).max(5),
+  comment: z.string()
+    .transform((value) => value.replace(/\s+/g, " ").trim())
+    .pipe(z.string().max(500, "O comentário deve ter no máximo 500 caracteres."))
+    .refine((value) => !/[<>]/.test(value), "O comentário deve conter somente texto, sem HTML."),
 });
 const messageContentSchema = z.string()
   .transform((value) => value.replace(/\s+/g, " ").trim())
@@ -292,13 +296,15 @@ export async function setContentRating(
     groupId: formString(formData, "groupId"),
     contentId: formString(formData, "contentId"),
     rating: formString(formData, "rating"),
+    comment: formString(formData, "comment"),
   });
-  if (!parsed.success) return actionError("Escolha uma avaliação inteira entre 1 e 5.");
+  if (!parsed.success) return actionError("Revise sua avaliação.", parsed.error);
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_content_rating", {
     p_content_id: parsed.data.contentId,
     p_rating: parsed.data.rating,
+    p_comment: parsed.data.comment || null,
   });
   if (error) {
     return actionError("Não foi possível registrar a avaliação. O conteúdo precisa estar concluído.");

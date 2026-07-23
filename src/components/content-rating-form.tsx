@@ -18,10 +18,12 @@ export function ContentRatingForm({
   groupId,
   contentId,
   currentRating,
+  currentComment,
 }: {
   groupId: string;
   contentId: string;
   currentRating: number | null;
+  currentComment: string | null;
 }) {
   const [rating, setRating] = useState(currentRating ?? 0);
 
@@ -63,6 +65,21 @@ export function ContentRatingForm({
       <p aria-live="polite" className="text-sm text-(--muted)">
         {rating ? `${rating} de 5 — ${ratingLabels[rating]}` : "Nenhuma nota selecionada"}
       </p>
+      <div>
+        <label htmlFor="rating-comment" className="text-sm font-medium">
+          Comentário <span className="font-normal text-(--muted)">(opcional)</span>
+        </label>
+        <textarea
+          id="rating-comment"
+          name="comment"
+          maxLength={500}
+          rows={3}
+          defaultValue={currentComment ?? ""}
+          placeholder="Conte brevemente o que achou…"
+          className="mt-2 w-full resize-y rounded-xl border bg-(--surface-muted) px-4 py-3"
+        />
+        <p className="mt-1 text-xs text-(--muted)">Até 500 caracteres.</p>
+      </div>
     </ActionForm>
   );
 }
