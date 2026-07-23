@@ -31,7 +31,7 @@ export function ContentRatingForm({
       submitLabel={currentRating ? "Atualizar avaliação" : "Enviar avaliação"}
       pendingLabel="Salvando…"
       className="space-y-4"
-      buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+      buttonClassName="rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
     >
       <input type="hidden" name="groupId" value={groupId} />
       <input type="hidden" name="contentId" value={contentId} />
@@ -41,8 +41,8 @@ export function ContentRatingForm({
           {[1, 2, 3, 4, 5].map((value) => (
             <label
               key={value}
-              className={`cursor-pointer rounded-xl border px-3 py-2 text-2xl transition hover:bg-[var(--surface-muted)] ${
-                rating === value ? "border-[var(--accent)] bg-[var(--surface-muted)]" : ""
+              className={`cursor-pointer rounded-xl border px-3 py-2 text-2xl transition hover:bg-(--surface-muted) ${
+                rating === value ? "border-(--accent) bg-(--surface-muted)" : ""
               }`}
             >
               <input
@@ -60,7 +60,7 @@ export function ContentRatingForm({
           ))}
         </div>
       </fieldset>
-      <p aria-live="polite" className="text-sm text-[var(--muted)]">
+      <p aria-live="polite" className="text-sm text-(--muted)">
         {rating ? `${rating} de 5 — ${ratingLabels[rating]}` : "Nenhuma nota selecionada"}
       </p>
     </ActionForm>

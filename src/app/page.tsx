@@ -22,9 +22,9 @@ export default async function HomePage({
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-12">
-      <section className="w-full max-w-md rounded-3xl border bg-[var(--surface)] p-7 shadow-2xl shadow-black/15 sm:p-9">
+      <section className="w-full max-w-md rounded-3xl border bg-(--surface) p-7 shadow-2xl shadow-black/15 sm:p-9">
         <div className="mb-8">
-          <div className="mb-5 grid size-12 place-items-center rounded-2xl bg-[var(--accent)] text-xl font-black text-[#07150c]">
+          <div className="mb-5 grid size-12 place-items-center rounded-2xl bg-(--accent) text-xl font-black text-[#07150c]">
             AÍ
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Indica Aí</h1>

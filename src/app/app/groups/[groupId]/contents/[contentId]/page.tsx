@@ -105,9 +105,9 @@ export default async function ContentDetailsPage({
     <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: content.title }]} />
 
-      <article className="mt-6 overflow-hidden rounded-3xl border bg-[var(--surface)]">
+      <article className="mt-6 overflow-hidden rounded-3xl border bg-(--surface)">
         <div className="grid md:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <div className="relative min-h-72 bg-[var(--surface-muted)] md:min-h-[30rem]">
+          <div className="relative min-h-72 bg-(--surface-muted) md:min-h-120">
             <ContentThumbnail src={content.thumbnail_url} alt={`Capa de ${content.title}`} title={content.title} eager />
           </div>
           <div className="p-7 sm:p-9">
@@ -116,25 +116,25 @@ export default async function ContentDetailsPage({
               <ContentStatusBadge status={content.status} />
             </div>
             <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">{content.title}</h1>
-            {content.description ? <p className="mt-5 whitespace-pre-wrap leading-relaxed text-[var(--muted)]">{content.description}</p> : null}
-            <dl className="mt-7 space-y-2 border-t pt-5 text-sm text-[var(--muted)]">
+            {content.description ? <p className="mt-5 whitespace-pre-wrap leading-relaxed text-(--muted)">{content.description}</p> : null}
+            <dl className="mt-7 space-y-2 border-t pt-5 text-sm text-(--muted)">
               <div className="flex justify-between gap-4">
                 <dt>Indicado por</dt>
-                <dd className="font-medium text-[var(--foreground)]">{content.creator?.name ?? "Membro"}</dd>
+                <dd className="font-medium text-(--foreground)">{content.creator?.name ?? "Membro"}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt>Cadastrado em</dt>
-                <dd className="font-medium text-[var(--foreground)]">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.created_at))}</dd>
+                <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.created_at))}</dd>
               </div>
               {content.completed_at ? (
                 <>
                   <div className="flex justify-between gap-4">
                     <dt>Concluído em</dt>
-                    <dd className="font-medium text-[var(--foreground)]">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))}</dd>
+                    <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt>Concluído por</dt>
-                    <dd className="font-medium text-[var(--foreground)]">{content.completer?.name ?? "Membro"}</dd>
+                    <dd className="font-medium text-(--foreground)">{content.completer?.name ?? "Membro"}</dd>
                   </div>
                 </>
               ) : null}
@@ -143,11 +143,11 @@ export default async function ContentDetailsPage({
         </div>
       </article>
 
-      <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+      <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
           <div>
             <h2 className="text-xl font-bold">Votação</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
+            <p className="mt-1 text-sm text-(--muted)">
               {voteSummary.content_status === "pending"
                 ? "A maioria dos membros ativos precisa votar favoravelmente."
                 : "Conteúdo aprovado pela maioria do grupo."}
@@ -159,16 +159,16 @@ export default async function ContentDetailsPage({
         </div>
 
         <dl className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-[var(--surface-muted)] p-4">
-            <dt className="text-xs text-[var(--muted)]">Favoráveis</dt>
+          <div className="rounded-2xl bg-(--surface-muted) p-4">
+            <dt className="text-xs text-(--muted)">Favoráveis</dt>
             <dd className="mt-1 text-2xl font-bold">{voteSummary.favorable_votes}</dd>
           </div>
-          <div className="rounded-2xl bg-[var(--surface-muted)] p-4">
-            <dt className="text-xs text-[var(--muted)]">Contrários</dt>
+          <div className="rounded-2xl bg-(--surface-muted) p-4">
+            <dt className="text-xs text-(--muted)">Contrários</dt>
             <dd className="mt-1 text-2xl font-bold">{voteSummary.contrary_votes}</dd>
           </div>
-          <div className="rounded-2xl bg-[var(--surface-muted)] p-4">
-            <dt className="text-xs text-[var(--muted)]">Membros ativos</dt>
+          <div className="rounded-2xl bg-(--surface-muted) p-4">
+            <dt className="text-xs text-(--muted)">Membros ativos</dt>
             <dd className="mt-1 text-2xl font-bold">{voteSummary.active_members}</dd>
           </div>
         </dl>
@@ -182,13 +182,13 @@ export default async function ContentDetailsPage({
                 : "Contrário"}</strong>
           </p>
           {voteSummary.content_status === "pending" ? (
-            <p className="mt-1 text-[var(--muted)]">
+            <p className="mt-1 text-(--muted)">
               {voteSummary.favorable_votes_needed === 1
                 ? "Falta 1 voto favorável para aprovação."
                 : `Faltam ${voteSummary.favorable_votes_needed} votos favoráveis para aprovação.`}
             </p>
           ) : (
-            <p className="mt-1 text-[var(--muted)]">A votação está encerrada e os votos são somente para leitura.</p>
+            <p className="mt-1 text-(--muted)">A votação está encerrada e os votos são somente para leitura.</p>
           )}
         </div>
 
@@ -199,7 +199,7 @@ export default async function ContentDetailsPage({
               submitLabel={voteSummary.current_user_vote === true ? "Favorável — seu voto" : "Votar favorável"}
               pendingLabel="Registrando…"
               className="space-y-2"
-              buttonClassName="w-full rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+              buttonClassName="w-full rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
             >
               <input type="hidden" name="groupId" value={groupId} />
               <input type="hidden" name="contentId" value={content.id} />
@@ -210,7 +210,7 @@ export default async function ContentDetailsPage({
               submitLabel={voteSummary.current_user_vote === false ? "Contrário — seu voto" : "Votar contrário"}
               pendingLabel="Registrando…"
               className="space-y-2"
-              buttonClassName="w-full rounded-xl border bg-[var(--surface-muted)] px-5 py-3 font-bold disabled:opacity-60"
+              buttonClassName="w-full rounded-xl border bg-(--surface-muted) px-5 py-3 font-bold disabled:opacity-60"
             >
               <input type="hidden" name="groupId" value={groupId} />
               <input type="hidden" name="contentId" value={content.id} />
@@ -221,9 +221,9 @@ export default async function ContentDetailsPage({
       </section>
 
       {content.status === "approved" ? (
-        <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+        <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
           <h2 className="text-xl font-bold">Concluir conteúdo</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">
+          <p className="mt-2 text-sm text-(--muted)">
             Qualquer membro ativo pode informar que este {content.type === "book" ? "livro foi lido" : "conteúdo foi assistido"}.
           </p>
           <ActionForm
@@ -232,7 +232,7 @@ export default async function ContentDetailsPage({
             pendingLabel="Concluindo…"
             confirmMessage={`Confirmar que este conteúdo foi ${content.type === "book" ? "lido" : "assistido"}?`}
             className="mt-5 space-y-3"
-            buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+            buttonClassName="rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
           >
             <input type="hidden" name="groupId" value={groupId} />
             <input type="hidden" name="contentId" value={content.id} />
@@ -241,17 +241,17 @@ export default async function ContentDetailsPage({
       ) : null}
 
       {content.status === "completed" ? (
-        <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+        <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
               <h2 className="text-xl font-bold">Avaliações</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">Avalie este conteúdo de 1 a 5 estrelas.</p>
+              <p className="mt-1 text-sm text-(--muted)">Avalie este conteúdo de 1 a 5 estrelas.</p>
             </div>
-            <div className="rounded-2xl bg-[var(--surface-muted)] px-5 py-3 text-right">
+            <div className="rounded-2xl bg-(--surface-muted) px-5 py-3 text-right">
               <p className="text-2xl font-bold" aria-label={ratingSummary.average_rating === null ? "Sem avaliações" : `Média ${ratingSummary.average_rating.toFixed(1)} de 5`}>
                 {ratingSummary.average_rating === null ? "—" : `${ratingSummary.average_rating.toFixed(1)} ★`}
               </p>
-              <p className="text-xs text-[var(--muted)]">
+              <p className="text-xs text-(--muted)">
                 {ratingSummary.rating_count} {ratingSummary.rating_count === 1 ? "avaliação" : "avaliações"}
               </p>
             </div>
@@ -267,10 +267,10 @@ export default async function ContentDetailsPage({
       ) : null}
 
       {content.trailer_url ? (
-        <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+        <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
           <div className="mb-5 flex items-center justify-between gap-4">
             <h2 className="text-xl font-bold">Trailer</h2>
-            <a href={youtubeWatchUrl(content.trailer_url)} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--accent-strong)] hover:underline">Abrir no YouTube</a>
+            <a href={youtubeWatchUrl(content.trailer_url)} target="_blank" rel="noopener noreferrer" className="text-sm text-(--accent-strong) hover:underline">Abrir no YouTube</a>
           </div>
           <div className="aspect-video overflow-hidden rounded-2xl bg-black">
             <iframe
@@ -286,10 +286,10 @@ export default async function ContentDetailsPage({
         </section>
       ) : null}
 
-      <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+      <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
         <div>
           <h2 className="text-xl font-bold">Conversa</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Esta conversa é privada para os membros ativos do grupo.</p>
+          <p className="mt-1 text-sm text-(--muted)">Esta conversa é privada para os membros ativos do grupo.</p>
         </div>
 
         <ActionForm
@@ -298,7 +298,7 @@ export default async function ContentDetailsPage({
           pendingLabel="Publicando…"
           resetOnSuccess
           className="mt-6 space-y-3"
-          buttonClassName="rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+          buttonClassName="rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
         >
           <input type="hidden" name="groupId" value={groupId} />
           <input type="hidden" name="contentId" value={content.id} />
@@ -310,7 +310,7 @@ export default async function ContentDetailsPage({
             maxLength={2000}
             rows={4}
             placeholder="Escreva uma mensagem…"
-            className="w-full resize-y rounded-xl border bg-[var(--surface-muted)] px-4 py-3"
+            className="w-full resize-y rounded-xl border bg-(--surface-muted) px-4 py-3"
           />
         </ActionForm>
 
@@ -324,19 +324,19 @@ export default async function ContentDetailsPage({
                 const wasEdited = !message.deleted_at
                   && new Date(message.updated_at).getTime() > new Date(message.created_at).getTime();
                 return (
-                  <li key={message.id} className="rounded-2xl border bg-[var(--surface-muted)] p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
-                      <span className="font-semibold text-[var(--foreground)]">{message.author?.name ?? "Membro"}</span>
+                  <li key={message.id} className="rounded-2xl border bg-(--surface-muted) p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-(--muted)">
+                      <span className="font-semibold text-(--foreground)">{message.author?.name ?? "Membro"}</span>
                       <time dateTime={message.created_at}>
                         {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
                       </time>
                     </div>
                     {message.deleted_at ? (
-                      <p className="mt-3 italic text-[var(--muted)]">Mensagem removida</p>
+                      <p className="mt-3 italic text-(--muted)">Mensagem removida</p>
                     ) : (
                       <>
-                        <p className="mt-3 whitespace-pre-wrap break-words">{message.content}</p>
-                        {wasEdited ? <p className="mt-2 text-xs text-[var(--muted)]">Editada</p> : null}
+                        <p className="mt-3 whitespace-pre-wrap wrap-break-word">{message.content}</p>
+                        {wasEdited ? <p className="mt-2 text-xs text-(--muted)">Editada</p> : null}
                         {isAuthor ? (
                           <div className="mt-4 grid gap-3 border-t pt-4 md:grid-cols-[1fr_auto]">
                             <ActionForm
@@ -344,13 +344,13 @@ export default async function ContentDetailsPage({
                               submitLabel="Salvar edição"
                               pendingLabel="Salvando…"
                               className="space-y-2"
-                              buttonClassName="rounded-lg border bg-[var(--surface)] px-3 py-2 text-sm font-semibold disabled:opacity-60"
+                              buttonClassName="rounded-lg border bg-(--surface) px-3 py-2 text-sm font-semibold disabled:opacity-60"
                             >
                               <input type="hidden" name="groupId" value={groupId} />
                               <input type="hidden" name="contentId" value={content.id} />
                               <input type="hidden" name="messageId" value={message.id} />
                               <label htmlFor={`message-${message.id}`} className="sr-only">Editar mensagem</label>
-                              <textarea id={`message-${message.id}`} name="content" required maxLength={2000} rows={2} defaultValue={message.content} className="w-full resize-y rounded-lg border bg-[var(--surface)] px-3 py-2 text-sm" />
+                              <textarea id={`message-${message.id}`} name="content" required maxLength={2000} rows={2} defaultValue={message.content} className="w-full resize-y rounded-lg border bg-(--surface) px-3 py-2 text-sm" />
                             </ActionForm>
                             <ActionForm
                               action={deleteContentMessage}
@@ -373,17 +373,17 @@ export default async function ContentDetailsPage({
               })}
             </ul>
           ) : (
-            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-[var(--muted)]">Nenhuma mensagem ainda. Inicie a conversa.</p>
+            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-(--muted)">Nenhuma mensagem ainda. Inicie a conversa.</p>
           )}
 
           {!messagesError && totalMessagePages > 1 ? (
             <nav aria-label="Paginação das mensagens" className="mt-6 flex items-center justify-between gap-4 text-sm">
               {messagesPage > 1 ? (
-                <Link href={`?messagesPage=${messagesPage - 1}`} className="rounded-lg border px-3 py-2 hover:bg-[var(--surface-muted)]">← Mais recentes</Link>
+                <Link href={`?messagesPage=${messagesPage - 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">← Mais recentes</Link>
               ) : <span />}
-              <span className="text-[var(--muted)]">Página {Math.min(messagesPage, totalMessagePages)} de {totalMessagePages}</span>
+              <span className="text-(--muted)">Página {Math.min(messagesPage, totalMessagePages)} de {totalMessagePages}</span>
               {messagesPage < totalMessagePages ? (
-                <Link href={`?messagesPage=${messagesPage + 1}`} className="rounded-lg border px-3 py-2 hover:bg-[var(--surface-muted)]">Mais antigas →</Link>
+                <Link href={`?messagesPage=${messagesPage + 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">Mais antigas →</Link>
               ) : <span />}
             </nav>
           ) : null}
@@ -391,9 +391,9 @@ export default async function ContentDetailsPage({
       </section>
 
       {canManage ? (
-        <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-7 sm:p-9">
+        <section className="mt-8 rounded-3xl border bg-(--surface) p-7 sm:p-9">
           <h2 className="text-2xl font-bold">Editar conteúdo</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">Você pode alterar sua indicação enquanto ela estiver aguardando aprovação.</p>
+          <p className="mt-2 text-sm text-(--muted)">Você pode alterar sua indicação enquanto ela estiver aguardando aprovação.</p>
           <div className="mt-6">
             <ContentForm groupId={groupId} content={content} />
           </div>

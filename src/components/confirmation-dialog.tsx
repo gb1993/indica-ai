@@ -43,11 +43,11 @@ export function ConfirmationDialog({
       onClose={() => {
         if (open) onCancel();
       }}
-      className="m-auto w-[min(92vw,28rem)] rounded-3xl border bg-[var(--surface)] p-0 text-[var(--foreground)] shadow-2xl backdrop:bg-black/60"
+      className="m-auto w-[min(92vw,28rem)] rounded-3xl border bg-(--surface) p-0 text-(--foreground) shadow-2xl backdrop:bg-black/60"
     >
       <div className="p-6 sm:p-7">
         <h2 id="confirmation-title" className="text-xl font-bold">Confirmar ação</h2>
-        <p id="confirmation-description" className="mt-3 leading-relaxed text-[var(--muted)]">{message}</p>
+        <p id="confirmation-description" className="mt-3 leading-relaxed text-(--muted)">{message}</p>
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button ref={cancelRef} type="button" onClick={onCancel} className="rounded-xl border px-4 py-2.5 font-semibold">Cancelar</button>
           <button type="button" onClick={onConfirm} className="rounded-xl bg-red-600 px-4 py-2.5 font-bold text-white">Confirmar</button>

@@ -17,8 +17,8 @@ type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count"> & {
 
 const sections: Array<{ status: ContentStatus; title: string; empty: string }> = [
   { status: "pending", title: "Aguardando aprovação", empty: "Nenhum conteúdo aguardando aprovação." },
-  { status: "approved", title: "Próximos", empty: "Nenhum conteúdo aprovado por enquanto." },
-  { status: "completed", title: "Concluídos", empty: "Nenhum conteúdo concluído por enquanto." },
+  { status: "approved", title: "Próximos conteúdos", empty: "Nenhum conteúdo para ver..." },
+  { status: "completed", title: "Conteúdos concluídos", empty: "Nenhum conteúdo concluído por enquanto." },
 ];
 
 export default async function GroupPage({
@@ -66,20 +66,20 @@ export default async function GroupPage({
   return (
     <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name }]} />
-      <section className="mt-6 rounded-3xl border bg-[var(--surface)] p-7 sm:p-10">
+      <section className="mt-6 rounded-3xl border bg-(--surface) p-7 sm:p-10">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
           <div>
             <div className="mb-3 flex items-center gap-3">
-              <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs text-[var(--muted)]">{isOwner ? "Proprietário" : "Membro"}</span>
-              <span className="text-sm text-[var(--muted)]">{count ?? 0} {(count ?? 0) === 1 ? "membro" : "membros"}</span>
+              <span className="rounded-full bg-(--surface-muted) px-3 py-1 text-xs text-(--muted)">{isOwner ? "Proprietário" : "Membro"}</span>
+              <span className="text-sm text-(--muted)">{count ?? 0} {(count ?? 0) === 1 ? "membro" : "membros"}</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{group.name}</h1>
-            <p className="mt-4 max-w-2xl leading-relaxed text-[var(--muted)]">{group.description || "Este grupo ainda não possui descrição."}</p>
+            <p className="mt-4 max-w-2xl leading-relaxed text-(--muted)">{group.description || "Este grupo ainda não possui descrição."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/app/groups/${groupId}/contents/new`} className="cursor-pointer rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-[#07150c] transition hover:brightness-90">Adicionar conteúdo</Link>
-            <Link href={`/app/groups/${groupId}/members`} className="cursor-pointer rounded-xl border bg-[var(--surface-muted)] px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Membros</Link>
-            {isOwner && <Link href={`/app/groups/${groupId}/settings`} className="cursor-pointer rounded-xl border bg-[var(--surface-muted)] px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Configurações</Link>}
+            <Link href={`/app/groups/${groupId}/contents/new`} className="cursor-pointer rounded-xl bg-(--accent) px-4 py-2.5 text-sm font-bold text-[#07150c] transition hover:brightness-90">Adicionar conteúdo</Link>
+            <Link href={`/app/groups/${groupId}/members`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Membros</Link>
+            {isOwner && <Link href={`/app/groups/${groupId}/settings`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Configurações</Link>}
           </div>
         </div>
       </section>
@@ -88,13 +88,13 @@ export default async function GroupPage({
 
       <section aria-label="Filtrar conteúdos por tipo" className="mt-6">
         <div className="flex gap-2 overflow-x-auto pb-2">
-          <Link href={activeTab === "overview" ? `/app/groups/${groupId}` : `/app/groups/${groupId}?tab=${activeTab}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${!activeType ? "bg-[var(--accent)] font-bold text-[#07150c]" : "bg-[var(--surface)]"}`}>Todos</Link>
+          <Link href={activeTab === "overview" ? `/app/groups/${groupId}` : `/app/groups/${groupId}?tab=${activeTab}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${!activeType ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>Todos</Link>
           {CONTENT_TYPES.map((type) => {
             const params = new URLSearchParams();
             if (activeTab !== "overview") params.set("tab", activeTab);
             params.set("type", type);
             return (
-              <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${activeType === type ? "bg-[var(--accent)] font-bold text-[#07150c]" : "bg-[var(--surface)]"}`}>
+              <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${activeType === type ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>
                 <span aria-hidden>{CONTENT_TYPE_META[type].icon}</span> {CONTENT_TYPE_META[type].label}
               </Link>
             );
@@ -109,7 +109,7 @@ export default async function GroupPage({
             <section key={section.status}>
               <div className="mb-4 flex items-end justify-between gap-4">
                 <h2 className="text-2xl font-bold tracking-tight">{section.title}</h2>
-                <span className="text-sm text-[var(--muted)]">{items.length}</span>
+                <span className="text-sm text-(--muted)">{items.length}</span>
               </div>
               {items.length ? (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -122,7 +122,18 @@ export default async function GroupPage({
                   ))}
                 </div>
               ) : (
-                <EmptyState title={section.title} description={activeType ? `Nenhum conteúdo do tipo ${CONTENT_TYPE_META[activeType].label.toLowerCase()} nesta seção.` : section.empty} />
+                <EmptyState
+                  title={section.title}
+                  description={activeType ? `Nenhum conteúdo do tipo ${CONTENT_TYPE_META[activeType].label.toLowerCase()} nesta seção.` : section.empty}
+                  action={section.status !== "completed" ? (
+                    <Link
+                      href={`/app/groups/${groupId}/contents/new`}
+                      className="inline-block cursor-pointer rounded-xl bg-(--accent) px-5 py-3 text-sm font-bold text-[#07150c] transition hover:brightness-90"
+                    >
+                      Adicionar conteúdo
+                    </Link>
+                  ) : undefined}
+                />
               )}
             </section>
           );

@@ -20,7 +20,7 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       aria-label="Alternar tema claro ou escuro"
       title="Alternar tema"
-      className="grid size-10 place-items-center rounded-xl border bg-[var(--surface-muted)] text-lg transition"
+      className="grid size-10 place-items-center rounded-xl border bg-(--surface-muted) text-lg transition"
     >
       <span aria-hidden="true" className="dark:hidden">☾</span>
       <span aria-hidden="true" className="hidden dark:inline">☀</span>

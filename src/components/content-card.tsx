@@ -22,9 +22,9 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
   return (
     <Link
       href={`/app/groups/${content.group_id}/contents/${content.id}`}
-      className="group overflow-hidden rounded-2xl border bg-[var(--surface)] transition hover:border-[var(--accent)] hover:brightness-95"
+      className="group overflow-hidden rounded-2xl border bg-(--surface) transition hover:border-(--accent) hover:brightness-95"
     >
-      <div className="relative aspect-video overflow-hidden bg-[var(--surface-muted)]">
+      <div className="relative aspect-video overflow-hidden bg-(--surface-muted)">
         <ContentThumbnail src={content.thumbnail_url} alt={`Capa de ${content.title}`} title={content.title} eager={eager} />
       </div>
       <div className="p-4">
@@ -32,12 +32,12 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
           <ContentTypeBadge type={content.type} />
           <ContentStatusBadge status={content.status} />
         </div>
-        <h3 className="mt-3 line-clamp-2 font-bold group-hover:text-[var(--accent-strong)]">{content.title}</h3>
+        <h3 className="mt-3 line-clamp-2 font-bold group-hover:text-(--accent-strong)">{content.title}</h3>
         {content.status === "completed" ? (
-          <dl className="mt-3 space-y-1.5 border-t pt-3 text-xs text-[var(--muted)]">
+          <dl className="mt-3 space-y-1.5 border-t pt-3 text-xs text-(--muted)">
             <div className="flex justify-between gap-3">
               <dt>Conclusão</dt>
-              <dd className="text-[var(--foreground)]">
+              <dd className="text-(--foreground)">
                 {content.completed_at
                   ? new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))
                   : "—"}
@@ -45,17 +45,17 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
             </div>
             <div className="flex justify-between gap-3">
               <dt>Média</dt>
-              <dd className="text-[var(--foreground)]">
+              <dd className="text-(--foreground)">
                 {content.average_rating === null ? "Sem avaliações" : `${content.average_rating.toFixed(1)} ★`}
               </dd>
             </div>
             <div className="flex justify-between gap-3">
               <dt>Avaliações</dt>
-              <dd className="text-[var(--foreground)]">{content.rating_count}</dd>
+              <dd className="text-(--foreground)">{content.rating_count}</dd>
             </div>
           </dl>
         ) : content.description ? (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--muted)]">{content.description}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-(--muted)">{content.description}</p>
         ) : null}
       </div>
     </Link>

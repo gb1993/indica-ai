@@ -83,11 +83,11 @@ export default async function DashboardPage() {
     <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
       <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="mb-2 text-sm font-semibold text-[var(--accent-strong)]">Seu espaço privado</p>
+          <p className="mb-2 text-sm font-semibold text-(--accent-strong)">Seu espaço privado</p>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Olá, {name}</h1>
-          <p className="mt-2 text-[var(--muted)]">Acompanhe seus grupos e as próximas escolhas.</p>
+          <p className="mt-2 text-(--muted)">Acompanhe seus grupos e as próximas escolhas.</p>
         </div>
-        <Link href="/app/groups/new" className="rounded-xl bg-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[#07150c] transition hover:brightness-90">Criar grupo</Link>
+        <Link href="/app/groups/new" className="rounded-xl bg-(--accent) px-5 py-3 text-center text-sm font-bold text-[#07150c] transition hover:brightness-90">Criar grupo</Link>
       </div>
 
       {groups.length ? (
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
         <EmptyState
           title="Nenhum grupo ainda"
           description="Crie seu primeiro grupo ou aceite um convite para começar."
-          action={<Link href="/app/groups/new" className="inline-block rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c]">Criar primeiro grupo</Link>}
+          action={<Link href="/app/groups/new" className="inline-block rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c]">Criar primeiro grupo</Link>}
         />
       )}
     </main>

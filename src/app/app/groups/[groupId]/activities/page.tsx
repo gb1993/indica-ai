@@ -77,9 +77,9 @@ export default async function GroupActivitiesPage({
   return (
     <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Atividades" }]} />
-      <section className="mt-6 rounded-3xl border bg-[var(--surface)] p-7 sm:p-9">
+      <section className="mt-6 rounded-3xl border bg-(--surface) p-7 sm:p-9">
         <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
-        <p className="mt-2 text-[var(--muted)]">Histórico privado das atividades do grupo.</p>
+        <p className="mt-2 text-(--muted)">Histórico privado das atividades do grupo.</p>
       </section>
 
       <GroupTabs groupId={groupId} active="activities" />
@@ -91,26 +91,26 @@ export default async function GroupActivitiesPage({
         ) : activities.length ? (
           <ol className="mt-5 space-y-3">
             {activities.map((activity) => (
-              <li key={activity.id} className="rounded-2xl border bg-[var(--surface)] p-5">
+              <li key={activity.id} className="rounded-2xl border bg-(--surface) p-5">
                 <p className="leading-relaxed">
                   <strong>{activity.actor?.name ?? metadataText(activity.metadata, "actor_name") ?? "Sistema"}</strong>{" "}
-                  <span className="text-[var(--muted)]">{activityDescription(activity)}</span>
+                  <span className="text-(--muted)">{activityDescription(activity)}</span>
                 </p>
-                <time dateTime={activity.created_at} className="mt-2 block text-xs text-[var(--muted)]">
+                <time dateTime={activity.created_at} className="mt-2 block text-xs text-(--muted)">
                   {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(activity.created_at))}
                 </time>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="mt-5 rounded-2xl border border-dashed bg-[var(--surface)] p-7 text-sm text-[var(--muted)]">Nenhuma atividade registrada ainda.</p>
+          <p className="mt-5 rounded-2xl border border-dashed bg-(--surface) p-7 text-sm text-(--muted)">Nenhuma atividade registrada ainda.</p>
         )}
 
         {!error && totalPages > 1 ? (
           <nav aria-label="Paginação das atividades" className="mt-6 flex items-center justify-between gap-4 text-sm">
-            {page > 1 ? <Link href={`?page=${page - 1}`} className="rounded-lg border px-3 py-2 hover:bg-[var(--surface-muted)]">← Anterior</Link> : <span />}
-            <span className="text-[var(--muted)]">Página {Math.min(page, totalPages)} de {totalPages}</span>
-            {page < totalPages ? <Link href={`?page=${page + 1}`} className="rounded-lg border px-3 py-2 hover:bg-[var(--surface-muted)]">Próxima →</Link> : <span />}
+            {page > 1 ? <Link href={`?page=${page - 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">← Anterior</Link> : <span />}
+            <span className="text-(--muted)">Página {Math.min(page, totalPages)} de {totalPages}</span>
+            {page < totalPages ? <Link href={`?page=${page + 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">Próxima →</Link> : <span />}
           </nav>
         ) : null}
       </section>

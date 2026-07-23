@@ -71,27 +71,27 @@ export default async function GroupMembersPage({
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Membros" }]} />
       <div className="mt-6">
         <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
-        <p className="mt-2 text-[var(--muted)]">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"}</p>
+        <p className="mt-2 text-(--muted)">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"}</p>
       </div>
       <GroupTabs groupId={groupId} active="members" />
       {isOwner && (
-        <section className="mb-6 mt-8 rounded-2xl border bg-[var(--surface)] p-6">
+        <section className="mb-6 mt-8 rounded-2xl border bg-(--surface) p-6">
           <h2 className="font-bold">Convidar por e-mail</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">O link será válido por 5 minutos e somente para o e-mail informado.</p>
+          <p className="mt-1 text-sm text-(--muted)">O link será válido por 5 minutos e somente para o e-mail informado.</p>
           <InvitationForm groupId={groupId} />
         </section>
       )}
 
-      <section className="overflow-hidden rounded-2xl border bg-[var(--surface)]">
+      <section className="overflow-hidden rounded-2xl border bg-(--surface)">
         <ul className="divide-y">
           {members.map((member) => (
             <li key={member.id} className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="truncate font-semibold">{member.user?.name ?? "Usuário"}</p>
-                  <span className="rounded-full bg-[var(--surface-muted)] px-2 py-0.5 text-xs text-[var(--muted)]">{member.role === "owner" ? "Proprietário" : "Membro"}</span>
+                  <span className="rounded-full bg-(--surface-muted) px-2 py-0.5 text-xs text-(--muted)">{member.role === "owner" ? "Proprietário" : "Membro"}</span>
                 </div>
-                <p className="truncate text-sm text-[var(--muted)]">{member.user?.email}</p>
+                <p className="truncate text-sm text-(--muted)">{member.user?.email}</p>
               </div>
               {isOwner && member.role !== "owner" && (
                 <ActionForm
@@ -114,7 +114,7 @@ export default async function GroupMembersPage({
         <section className="mt-8">
           <h2 className="text-xl font-bold">Convites recentes</h2>
           {invitations.length ? (
-            <div className="mt-4 overflow-hidden rounded-2xl border bg-[var(--surface)]">
+            <div className="mt-4 overflow-hidden rounded-2xl border bg-(--surface)">
               <ul className="divide-y">
                 {invitations.map((invitation) => {
                   const status = invitationStatus(invitation);
@@ -123,7 +123,7 @@ export default async function GroupMembersPage({
                     <li key={invitation.id} className="flex flex-col justify-between gap-3 p-5 sm:flex-row sm:items-center">
                       <div className="min-w-0">
                         <p className="truncate font-medium">{invitation.email}</p>
-                        <p className="mt-1 text-xs text-[var(--muted)]">{status}</p>
+                        <p className="mt-1 text-xs text-(--muted)">{status}</p>
                       </div>
                       {canManage && (
                         <div className="flex gap-2">
@@ -131,7 +131,7 @@ export default async function GroupMembersPage({
                             action={resendInvitation}
                             submitLabel="Reenviar"
                             pendingLabel="Reenviando…"
-                            buttonClassName="rounded-lg border px-3 py-2 text-sm hover:bg-[var(--surface-muted)] disabled:opacity-60"
+                            buttonClassName="rounded-lg border px-3 py-2 text-sm hover:bg-(--surface-muted) disabled:opacity-60"
                           >
                             <input type="hidden" name="groupId" value={groupId} />
                             <input type="hidden" name="invitationId" value={invitation.id} />
@@ -156,7 +156,7 @@ export default async function GroupMembersPage({
               </ul>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-[var(--muted)]">Nenhum convite enviado.</p>
+            <p className="mt-3 text-sm text-(--muted)">Nenhum convite enviado.</p>
           )}
         </section>
       )}

@@ -65,15 +65,15 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
 
     return (
       <div className="space-y-5">
-        <div className="rounded-xl bg-[var(--surface-muted)] px-4 py-3">
-          <p className="text-sm text-[var(--muted)]">Código enviado para</p>
+        <div className="rounded-xl bg-(--surface-muted) px-4 py-3">
+          <p className="text-sm text-(--muted)">Código enviado para</p>
           <p className="mt-1 truncate text-sm font-semibold">{requestState.email}</p>
         </div>
 
         <p
           role="timer"
           aria-live="polite"
-          className={`text-center text-sm font-medium ${codeExpired ? "text-red-500" : "text-[var(--muted)]"}`}
+          className={`text-center text-sm font-medium ${codeExpired ? "text-red-500" : "text-(--muted)"}`}
         >
           {codeExpired
             ? "O código expirou. Solicite um novo código."
@@ -99,12 +99,12 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
             pattern="[0-9]*"
             placeholder="00000000"
             disabled={codeExpired}
-            className="w-full rounded-xl border bg-[var(--surface-muted)] px-4 py-3 text-center text-xl font-bold tracking-[0.35em] placeholder:text-[var(--muted)]"
+            className="w-full rounded-xl border bg-(--surface-muted) px-4 py-3 text-center text-xl font-bold tracking-[0.35em] placeholder:text-(--muted)"
           />
           <button
             type="submit"
             disabled={verifying || codeExpired}
-            className="w-full rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[#07150c] transition disabled:opacity-60"
+            className="w-full rounded-xl bg-(--accent) px-4 py-3 text-sm font-bold text-[#07150c] transition disabled:opacity-60"
           >
             {verifying ? "Verificando…" : "Entrar"}
           </button>
@@ -117,7 +117,7 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
 
         <Link
           href="/"
-          className="block text-center text-sm text-[var(--muted)] underline-offset-4 hover:underline"
+          className="block text-center text-sm text-(--muted) underline-offset-4 hover:underline"
         >
           {codeExpired ? "Solicitar novo código" : "Usar outro e-mail"}
         </Link>
@@ -139,12 +139,12 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
         required
         maxLength={254}
         placeholder="voce@exemplo.com"
-        className="w-full rounded-xl border bg-[var(--surface-muted)] px-4 py-3 text-sm placeholder:text-[var(--muted)]"
+        className="w-full rounded-xl border bg-(--surface-muted) px-4 py-3 text-sm placeholder:text-(--muted)"
       />
       <button
         type="submit"
         disabled={requesting}
-        className="w-full rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[#07150c] transition disabled:opacity-60"
+        className="w-full rounded-xl bg-(--accent) px-4 py-3 text-sm font-bold text-[#07150c] transition disabled:opacity-60"
       >
         {requesting ? "Enviando…" : "Receber código por e-mail"}
       </button>

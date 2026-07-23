@@ -29,8 +29,8 @@ export function GroupTabs({ groupId, active }: { groupId: string; active: GroupT
               aria-current={active === tab.id ? "page" : undefined}
               className={`block border-b-2 px-3 py-3 text-sm font-semibold transition ${
                 active === tab.id
-                  ? "border-[var(--accent)] text-[var(--foreground)]"
-                  : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+                  ? "border-(--accent) text-(--foreground)"
+                  : "border-transparent text-(--muted) hover:text-(--foreground)"
               }`}
             >
               {tab.label}
