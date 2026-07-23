@@ -15,7 +15,11 @@ import {
 } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
 
-import { deleteContent } from "../actions";
+import {
+  deleteContent,
+  getContentVoteSummary,
+  setContentVote,
+} from "../actions";
 
 export const metadata: Metadata = { title: "Detalhes do conteúdo" };
 
@@ -42,7 +46,7 @@ export default async function ContentDetailsPage({
   const { groupId, contentId } = await params;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: contentRow }] = await Promise.all([
+  const [{ data: group }, { data: contentRow }, voteSummary] = await Promise.all([
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase
       .from("contents")
@@ -50,9 +54,10 @@ export default async function ContentDetailsPage({
       .eq("id", contentId)
       .eq("group_id", groupId)
       .single(),
+    getContentVoteSummary(contentId),
   ]);
 
-  if (!group || !contentRow) notFound();
+  if (!group || !contentRow || !voteSummary) notFound();
   const content = contentRow as unknown as ContentDetails;
   const type = CONTENT_TYPE_META[content.type];
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
@@ -92,6 +97,83 @@ export default async function ContentDetailsPage({
           </div>
         </div>
       </article>
+
+      <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+          <div>
+            <h2 className="text-xl font-bold">Votação</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {voteSummary.content_status === "pending"
+                ? "A maioria dos membros ativos precisa votar favoravelmente."
+                : "Conteúdo aprovado pela maioria do grupo."}
+            </p>
+          </div>
+          <span className="w-fit rounded-full border px-3 py-1.5 text-xs font-semibold">
+            {voteSummary.content_status === "pending" ? "Votação aberta" : "Aprovado"}
+          </span>
+        </div>
+
+        <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl bg-[var(--surface-muted)] p-4">
+            <dt className="text-xs text-[var(--muted)]">Favoráveis</dt>
+            <dd className="mt-1 text-2xl font-bold">{voteSummary.favorable_votes}</dd>
+          </div>
+          <div className="rounded-2xl bg-[var(--surface-muted)] p-4">
+            <dt className="text-xs text-[var(--muted)]">Contrários</dt>
+            <dd className="mt-1 text-2xl font-bold">{voteSummary.contrary_votes}</dd>
+          </div>
+          <div className="rounded-2xl bg-[var(--surface-muted)] p-4">
+            <dt className="text-xs text-[var(--muted)]">Membros ativos</dt>
+            <dd className="mt-1 text-2xl font-bold">{voteSummary.active_members}</dd>
+          </div>
+        </dl>
+
+        <div className="mt-5 rounded-2xl border p-4 text-sm">
+          <p>
+            Seu voto: <strong>{voteSummary.current_user_vote === null
+              ? "Ainda não votou"
+              : voteSummary.current_user_vote
+                ? "Favorável"
+                : "Contrário"}</strong>
+          </p>
+          {voteSummary.content_status === "pending" ? (
+            <p className="mt-1 text-[var(--muted)]">
+              {voteSummary.favorable_votes_needed === 1
+                ? "Falta 1 voto favorável para aprovação."
+                : `Faltam ${voteSummary.favorable_votes_needed} votos favoráveis para aprovação.`}
+            </p>
+          ) : (
+            <p className="mt-1 text-[var(--muted)]">A votação está encerrada e os votos são somente para leitura.</p>
+          )}
+        </div>
+
+        {voteSummary.content_status === "pending" ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <ActionForm
+              action={setContentVote}
+              submitLabel={voteSummary.current_user_vote === true ? "Favorável — seu voto" : "Votar favorável"}
+              pendingLabel="Registrando…"
+              className="space-y-2"
+              buttonClassName="w-full rounded-xl bg-[var(--accent)] px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+            >
+              <input type="hidden" name="groupId" value={groupId} />
+              <input type="hidden" name="contentId" value={content.id} />
+              <input type="hidden" name="vote" value="true" />
+            </ActionForm>
+            <ActionForm
+              action={setContentVote}
+              submitLabel={voteSummary.current_user_vote === false ? "Contrário — seu voto" : "Votar contrário"}
+              pendingLabel="Registrando…"
+              className="space-y-2"
+              buttonClassName="w-full rounded-xl border bg-[var(--surface-muted)] px-5 py-3 font-bold disabled:opacity-60"
+            >
+              <input type="hidden" name="groupId" value={groupId} />
+              <input type="hidden" name="contentId" value={content.id} />
+              <input type="hidden" name="vote" value="false" />
+            </ActionForm>
+          </div>
+        ) : null}
+      </section>
 
       {content.trailer_url ? (
         <section className="mt-8 rounded-3xl border bg-[var(--surface)] p-6 sm:p-8">

@@ -12,6 +12,20 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 const uuidSchema = z.uuid();
+const voteSchema = z.object({
+  groupId: uuidSchema,
+  contentId: uuidSchema,
+  vote: z.enum(["true", "false"]).transform((value) => value === "true"),
+});
+
+export type ContentVoteSummary = {
+  favorable_votes: number;
+  contrary_votes: number;
+  active_members: number;
+  current_user_vote: boolean | null;
+  favorable_votes_needed: number;
+  content_status: "pending" | "approved" | "completed";
+};
 
 function isSafeHttpsUrl(value: string) {
   try {
@@ -180,4 +194,48 @@ export async function deleteContent(
 
   revalidatePath(`/app/groups/${groupId.data}`);
   redirect(`/app/groups/${groupId.data}`);
+}
+
+export async function setContentVote(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = voteSchema.safeParse({
+    groupId: formString(formData, "groupId"),
+    contentId: formString(formData, "contentId"),
+    vote: formString(formData, "vote"),
+  });
+  if (!parsed.success) return actionError("Voto inválido.");
+
+  const supabase = await createClient();
+  const { data: status, error } = await supabase.rpc("set_content_vote", {
+    p_content_id: parsed.data.contentId,
+    p_vote: parsed.data.vote,
+  });
+
+  if (error || !status) {
+    return actionError("Não foi possível registrar o voto. A votação pode já estar encerrada.");
+  }
+
+  revalidatePath(`/app/groups/${parsed.data.groupId}`);
+  revalidatePath(`/app/groups/${parsed.data.groupId}/contents/${parsed.data.contentId}`);
+  return {
+    status: "success",
+    message: status === "approved"
+      ? "Voto registrado. O conteúdo foi aprovado."
+      : "Voto registrado.",
+  };
+}
+
+export async function getContentVoteSummary(contentId: string): Promise<ContentVoteSummary | null> {
+  const parsed = uuidSchema.safeParse(contentId);
+  if (!parsed.success) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_content_vote_summary", {
+    p_content_id: parsed.data,
+  });
+  if (error || !Array.isArray(data) || !data[0]) return null;
+
+  return data[0] as ContentVoteSummary;
 }
