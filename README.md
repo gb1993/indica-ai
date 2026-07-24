@@ -173,6 +173,12 @@ O Supabase deve usar um SMTP de produção. O SMTP configurado no painel do Supa
 
 As respostas do formulário de solicitação são genéricas para não confirmar se um e-mail já possui conta. Solicitar o código cria somente um registro pendente no Supabase Auth; o perfil da aplicação é criado pelo trigger apenas depois que o código é validado e o primeiro login gera uma sessão. A sessão SSR fica somente em cookies `HttpOnly`, `SameSite=Lax` e `Secure` em produção; tokens de autenticação não são gravados em `localStorage` ou `sessionStorage`.
 
+## Avatar
+
+O usuário seleciona uma imagem JPG, PNG ou WebP de até 8 MB, reposiciona o enquadramento em um recorte circular com zoom e confirma a prévia antes de salvar. O navegador gera um WebP de 256 × 256 pixels com no máximo 1 MB.
+
+Como a sessão fica em cookie `HttpOnly`, o arquivo otimizado é enviado a uma Server Action. O servidor valida novamente o arquivo, identifica o usuário pela sessão e grava o objeto no diretório exclusivo dele no Supabase Storage. A chave ou o token da sessão não são expostos ao JavaScript do navegador.
+
 ## TMDB e cadastro de conteúdos
 
 O TMDB não oferece GraphQL oficial. A integração usa a API REST v3 exclusivamente no servidor, com a chave armazenada em `TMDB_API_KEY`. A chave nunca é enviada ao navegador.

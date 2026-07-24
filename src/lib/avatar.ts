@@ -1,5 +1,6 @@
 export const MAX_AVATAR_SOURCE_SIZE = 8 * 1024 * 1024;
-export const AVATAR_OUTPUT_SIZE = 512;
+export const MAX_AVATAR_OUTPUT_SIZE = 1024 * 1024;
+export const AVATAR_OUTPUT_SIZE = 256;
 export const AVATAR_ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -33,6 +34,87 @@ export function calculateSquareCrop(width: number, height: number) {
     sourceY: (height - size) / 2,
     size,
   };
+}
+
+export function clampAvatarOffset({
+  width,
+  height,
+  zoom,
+  offsetX,
+  offsetY,
+  viewportSize,
+}: {
+  width: number;
+  height: number;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+  viewportSize: number;
+}) {
+  if (
+    !Number.isFinite(width)
+    || !Number.isFinite(height)
+    || !Number.isFinite(zoom)
+    || !Number.isFinite(viewportSize)
+    || width <= 0
+    || height <= 0
+    || zoom < 1
+    || viewportSize <= 0
+  ) {
+    throw new Error("Parâmetros de recorte inválidos.");
+  }
+
+  const baseScale = Math.max(viewportSize / width, viewportSize / height);
+  const scale = baseScale * zoom;
+  const maxX = Math.max(0, (width * scale - viewportSize) / 2);
+  const maxY = Math.max(0, (height * scale - viewportSize) / 2);
+
+  return {
+    offsetX: Math.max(-maxX, Math.min(maxX, offsetX)),
+    offsetY: Math.max(-maxY, Math.min(maxY, offsetY)),
+    scale,
+  };
+}
+
+export function calculateAvatarCrop({
+  width,
+  height,
+  zoom,
+  offsetX,
+  offsetY,
+  viewportSize,
+}: {
+  width: number;
+  height: number;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+  viewportSize: number;
+}) {
+  const clamped = clampAvatarOffset({
+    width,
+    height,
+    zoom,
+    offsetX,
+    offsetY,
+    viewportSize,
+  });
+  const sourceSize = viewportSize / clamped.scale;
+
+  return {
+    sourceX: (width - sourceSize) / 2 - clamped.offsetX / clamped.scale,
+    sourceY: (height - sourceSize) / 2 - clamped.offsetY / clamped.scale,
+    sourceSize,
+  };
+}
+
+export function validateOptimizedAvatar(file: AvatarFileMetadata): string | null {
+  if (file.type !== "image/webp") return "A imagem processada deve estar no formato WebP.";
+  if (file.size <= 0) return "A imagem processada está vazia.";
+  if (file.size > MAX_AVATAR_OUTPUT_SIZE) {
+    return "A imagem processada deve ter no máximo 1 MB.";
+  }
+  return null;
 }
 
 export function avatarObjectPath(userId: string) {
