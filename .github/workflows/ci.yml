@@ -92,7 +92,7 @@ jobs:
           fi
 
       - name: Start reduced Supabase stack
-        run: npx supabase start -x analytics,vector,realtime,edge-runtime,functions,studio,meta,imgproxy
+        run: npx supabase start -x logflare,vector,realtime,edge-runtime,studio,postgres-meta,imgproxy
 
       - name: Replay migrations and seed
         run: npx supabase db reset
