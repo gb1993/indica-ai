@@ -32,7 +32,6 @@ export default async function ProfilePage() {
 
       <section className="app-panel mt-7 p-6 sm:p-8">
         <AvatarForm
-          userId={authData.user.id}
           name={profile.name}
           initialAvatarUrl={profile.avatar_url}
         />

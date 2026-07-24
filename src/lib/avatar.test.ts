@@ -3,19 +3,23 @@ import test from "node:test";
 
 import {
   AVATAR_OUTPUT_SIZE,
+  MAX_AVATAR_OUTPUT_SIZE,
   MAX_AVATAR_SOURCE_SIZE,
   avatarObjectPath,
+  calculateAvatarCrop,
   calculateSquareCrop,
+  clampAvatarOffset,
   deleteAvatar,
   persistAvatar,
   validateAvatarFile,
+  validateOptimizedAvatar,
 } from "./avatar.ts";
 
 test("aceita os formatos de avatar permitidos dentro do limite", () => {
   for (const type of ["image/jpeg", "image/png", "image/webp"]) {
     assert.equal(validateAvatarFile({ type, size: MAX_AVATAR_SOURCE_SIZE }), null);
   }
-  assert.equal(AVATAR_OUTPUT_SIZE, 512);
+  assert.equal(AVATAR_OUTPUT_SIZE, 256);
 });
 
 test("rejeita formato, arquivo vazio e tamanho excessivo", () => {
@@ -30,6 +34,28 @@ test("rejeita formato, arquivo vazio e tamanho excessivo", () => {
   assert.match(
     validateAvatarFile({ type: "image/jpeg", size: MAX_AVATAR_SOURCE_SIZE + 1 }) ?? "",
     /8 MB/,
+  );
+});
+
+test("valida o WebP otimizado antes de enviar ao servidor", () => {
+  assert.equal(
+    validateOptimizedAvatar({ type: "image/webp", size: MAX_AVATAR_OUTPUT_SIZE }),
+    null,
+  );
+  assert.match(
+    validateOptimizedAvatar({ type: "image/png", size: 100 }) ?? "",
+    /WebP/,
+  );
+  assert.match(
+    validateOptimizedAvatar({ type: "image/webp", size: 0 }) ?? "",
+    /vazia/,
+  );
+  assert.match(
+    validateOptimizedAvatar({
+      type: "image/webp",
+      size: MAX_AVATAR_OUTPUT_SIZE + 1,
+    }) ?? "",
+    /1 MB/,
   );
 });
 
@@ -55,6 +81,46 @@ test("rejeita dimensões inválidas antes de usar o canvas", () => {
   for (const dimensions of [[0, 20], [20, -1], [Number.NaN, 10], [10, Infinity]]) {
     assert.throws(() => calculateSquareCrop(dimensions[0], dimensions[1]), /inválidas/);
   }
+});
+
+test("calcula recorte com zoom e deslocamento limitado à imagem", () => {
+  assert.deepEqual(
+    clampAvatarOffset({
+      width: 1200,
+      height: 800,
+      zoom: 1,
+      offsetX: 999,
+      offsetY: 999,
+      viewportSize: 256,
+    }),
+    { offsetX: 64, offsetY: 0, scale: 0.32 },
+  );
+
+  assert.deepEqual(
+    calculateAvatarCrop({
+      width: 1200,
+      height: 800,
+      zoom: 1,
+      offsetX: 64,
+      offsetY: 0,
+      viewportSize: 256,
+    }),
+    { sourceX: 0, sourceY: 0, sourceSize: 800 },
+  );
+});
+
+test("rejeita parâmetros inválidos no recorte interativo", () => {
+  assert.throws(
+    () => clampAvatarOffset({
+      width: 0,
+      height: 100,
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+      viewportSize: 256,
+    }),
+    /inválidos/,
+  );
 });
 
 test("isola o avatar no diretório do usuário", () => {

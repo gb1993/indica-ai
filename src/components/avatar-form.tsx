@@ -5,21 +5,30 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  removeProfileAvatar,
+  saveProfileAvatar,
+} from "@/app/app/profile/actions";
+import {
   AVATAR_OUTPUT_SIZE,
-  calculateSquareCrop,
-  deleteAvatar,
-  persistAvatar,
+  calculateAvatarCrop,
   validateAvatarFile,
 } from "@/lib/avatar";
-import { createClient } from "@/lib/supabase/browser";
 
+import {
+  AvatarCropDialog,
+  type AvatarCropSelection,
+} from "./avatar-crop-dialog";
 import { Toast } from "./toast";
 
-const AVATAR_QUALITY = 0.82;
+const AVATAR_QUALITY = 0.8;
 
-async function optimizeAvatar(file: File) {
+async function optimizeAvatar(file: File, selection: AvatarCropSelection) {
   const bitmap = await createImageBitmap(file);
-  const crop = calculateSquareCrop(bitmap.width, bitmap.height);
+  const crop = calculateAvatarCrop({
+    width: bitmap.width,
+    height: bitmap.height,
+    ...selection,
+  });
   const canvas = document.createElement("canvas");
   canvas.width = AVATAR_OUTPUT_SIZE;
   canvas.height = AVATAR_OUTPUT_SIZE;
@@ -30,8 +39,8 @@ async function optimizeAvatar(file: File) {
     bitmap,
     crop.sourceX,
     crop.sourceY,
-    crop.size,
-    crop.size,
+    crop.sourceSize,
+    crop.sourceSize,
     0,
     0,
     AVATAR_OUTPUT_SIZE,
@@ -47,22 +56,32 @@ async function optimizeAvatar(file: File) {
 }
 
 export function AvatarForm({
-  userId,
   name,
   initialAvatarUrl,
 }: {
-  userId: string;
   name: string;
   initialAvatarUrl: string | null;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [source, setSource] = useState<{
+    file: File;
+    url: string;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [croppedAvatar, setCroppedAvatar] = useState<Blob | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<{ status: "success" | "error"; message: string } | null>(null);
+  const [notice, setNotice] = useState<{
+    status: "success" | "error";
+    message: string;
+  } | null>(null);
   const initial = name.trim().charAt(0).toUpperCase() || "U";
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const previewUrl = useMemo(
+    () => (croppedAvatar ? URL.createObjectURL(croppedAvatar) : null),
+    [croppedAvatar],
+  );
 
   useEffect(() => {
     return () => {
@@ -70,7 +89,13 @@ export function AvatarForm({
     };
   }, [previewUrl]);
 
-  function selectFile(selectedFile: File | undefined) {
+  useEffect(() => {
+    return () => {
+      if (source) URL.revokeObjectURL(source.url);
+    };
+  }, [source]);
+
+  async function selectFile(selectedFile: File | undefined) {
     setNotice(null);
     if (!selectedFile) return;
     const validationError = validateAvatarFile(selectedFile);
@@ -78,54 +103,49 @@ export function AvatarForm({
       setNotice({ status: "error", message: validationError });
       return;
     }
-    setFile(selectedFile);
+
+    try {
+      const bitmap = await createImageBitmap(selectedFile);
+      const nextSource = {
+        file: selectedFile,
+        url: URL.createObjectURL(selectedFile),
+        width: bitmap.width,
+        height: bitmap.height,
+      };
+      bitmap.close();
+      setSource(nextSource);
+    } catch {
+      setNotice({
+        status: "error",
+        message: "Não foi possível abrir a imagem selecionada.",
+      });
+    }
   }
 
   async function uploadAvatar() {
-    if (!file || pending) return;
+    if (!croppedAvatar || pending) return;
     setPending(true);
     setNotice(null);
 
     try {
-      const optimized = await optimizeAvatar(file);
-      const supabase = createClient();
-      const publicUrl = await persistAvatar({
-        userId,
-        optimizedImage: optimized,
-        dependencies: {
-          authenticate: async () => {
-            const { data } = await supabase.auth.getUser();
-            return data.user?.id ?? null;
-          },
-          uploadObject: async (path, blob) => {
-            const { error } = await supabase.storage.from("avatars").upload(path, blob, {
-              cacheControl: "3600",
-              contentType: "image/webp",
-              upsert: true,
-            });
-            if (error) throw error;
-          },
-          getPublicUrl: (path) => supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl,
-          updateProfile: async (url) => {
-            const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
-            if (error) throw error;
-          },
-          removeObject: async (path) => {
-            const { error } = await supabase.storage.from("avatars").remove([path]);
-            if (error) throw error;
-          },
-        },
-      });
+      const formData = new FormData();
+      formData.set("avatar", croppedAvatar, "avatar.webp");
+      const result = await saveProfileAvatar(formData);
+      if (result.status === "error" || !result.avatarUrl) {
+        throw new Error(result.message);
+      }
 
-      setAvatarUrl(publicUrl);
-      setFile(null);
+      setAvatarUrl(result.avatarUrl);
+      setCroppedAvatar(null);
       if (inputRef.current) inputRef.current.value = "";
-      setNotice({ status: "success", message: "Foto de perfil atualizada." });
+      setNotice({ status: "success", message: result.message });
       router.refresh();
     } catch (error) {
       setNotice({
         status: "error",
-        message: error instanceof Error ? error.message : "Não foi possível atualizar a foto.",
+        message: error instanceof Error
+          ? error.message
+          : "Não foi possível atualizar a foto.",
       });
     } finally {
       setPending(false);
@@ -138,34 +158,20 @@ export function AvatarForm({
     setNotice(null);
 
     try {
-      const supabase = createClient();
-      await deleteAvatar({
-        userId,
-        dependencies: {
-          authenticate: async () => {
-            const { data } = await supabase.auth.getUser();
-            return data.user?.id ?? null;
-          },
-          removeObject: async (path) => {
-            const { error } = await supabase.storage.from("avatars").remove([path]);
-            if (error) throw error;
-          },
-          updateProfile: async (url) => {
-            const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
-            if (error) throw error;
-          },
-        },
-      });
+      const result = await removeProfileAvatar();
+      if (result.status === "error") throw new Error(result.message);
 
       setAvatarUrl(null);
-      setFile(null);
+      setCroppedAvatar(null);
       if (inputRef.current) inputRef.current.value = "";
-      setNotice({ status: "success", message: "Foto de perfil removida." });
+      setNotice({ status: "success", message: result.message });
       router.refresh();
     } catch (error) {
       setNotice({
         status: "error",
-        message: error instanceof Error ? error.message : "Não foi possível remover a foto.",
+        message: error instanceof Error
+          ? error.message
+          : "Não foi possível remover a foto.",
       });
     } finally {
       setPending(false);
@@ -197,7 +203,8 @@ export function AvatarForm({
         <div className="min-w-0 flex-1">
           <h2 className="font-bold">Foto de perfil</h2>
           <p className="mt-1 max-w-xl text-sm leading-relaxed text-(--muted)">
-            A imagem será recortada em formato quadrado e otimizada para WebP em 512 × 512 pixels antes do envio.
+            Ajuste o enquadramento como no Discord. A imagem será recortada e
+            otimizada para WebP em 256 × 256 pixels antes do envio.
           </p>
           <input
             ref={inputRef}
@@ -205,29 +212,71 @@ export function AvatarForm({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="sr-only"
-            onChange={(event) => selectFile(event.target.files?.[0])}
+            onChange={(event) => void selectFile(event.target.files?.[0])}
           />
           <div className="mt-4 flex flex-wrap gap-2">
             <label htmlFor="avatar-file" className="app-button-secondary cursor-pointer">
               Escolher imagem
             </label>
-            {file ? (
-              <button type="button" onClick={uploadAvatar} disabled={pending} className="app-button-primary disabled:opacity-60">
+            {croppedAvatar ? (
+              <button
+                type="button"
+                onClick={uploadAvatar}
+                disabled={pending}
+                className="app-button-primary disabled:opacity-60"
+              >
                 {pending ? "Enviando…" : "Salvar foto"}
               </button>
             ) : null}
-            {avatarUrl && !file ? (
-              <button type="button" onClick={removeAvatar} disabled={pending} className="app-button-secondary text-red-400 disabled:opacity-60">
+            {avatarUrl && !croppedAvatar ? (
+              <button
+                type="button"
+                onClick={removeAvatar}
+                disabled={pending}
+                className="app-button-secondary text-red-400 disabled:opacity-60"
+              >
                 {pending ? "Removendo…" : "Remover foto"}
               </button>
             ) : null}
           </div>
-          {file ? <p className="mt-3 truncate text-xs text-(--muted)">Selecionada: {file.name}</p> : null}
+          {croppedAvatar ? (
+            <p className="mt-3 text-xs text-(--muted)">Recorte pronto para salvar.</p>
+          ) : null}
         </div>
       </div>
 
+      {source ? (
+        <AvatarCropDialog
+          open
+          sourceUrl={source.url}
+          width={source.width}
+          height={source.height}
+          onCancel={() => {
+            setSource(null);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+          onApply={(selection) => {
+            void optimizeAvatar(source.file, selection)
+              .then((blob) => {
+                setCroppedAvatar(blob);
+                setSource(null);
+              })
+              .catch(() => {
+                setNotice({
+                  status: "error",
+                  message: "Não foi possível recortar a imagem.",
+                });
+              });
+          }}
+        />
+      ) : null}
+
       {notice ? (
-        <Toast status={notice.status} message={notice.message} onDismiss={() => setNotice(null)} />
+        <Toast
+          status={notice.status}
+          message={notice.message}
+          onDismiss={() => setNotice(null)}
+        />
       ) : null}
     </>
   );
