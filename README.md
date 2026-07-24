@@ -209,13 +209,29 @@ npm run build
 
 `test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo e upload de avatar, falhando se linhas, funções ou branches ficarem abaixo de 70%. `test:all` combina essa verificação com os testes de banco. O `test:db` exige a stack local do Supabase e o Docker Desktop ativo. As suítes pgTAP cobrem RLS, Storage de avatares, grupos, convites de uso único, autoria, conteúdo opcional e inválido, votação/maioria, conclusão, avaliações, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e votação quando requisições concorrentes chegam ao banco.
 
+## CI/CD no GitHub
+
+O workflow `.github/workflows/ci-cd.yml` é executado em pull requests para `main`, em pushes na `main` e manualmente. Dois gates independentes precisam passar:
+
+- **Application checks:** instalação reproduzível com `npm ci`, lint, TypeScript, testes com cobertura mínima de 70% e build de produção.
+- **Database migrations, RLS and pgTAP:** inicia uma stack Supabase descartável, reaplica migrations e seed do zero, executa testes pgTAP e falha em warnings do linter do banco.
+
+Em pull requests, o workflow também rejeita alteração ou remoção de migrations existentes. Toda correção de schema deve ser uma nova migration. O PR nunca recebe credenciais nem altera o Supabase de produção.
+
+Depois do merge, um push na `main` só aplica as migrations pendentes no projeto `npgrbjknpjfynluddgba` se os dois gates passarem. O seed não é enviado. Configure em **GitHub → Settings → Environments → production**:
+
+- `SUPABASE_ACCESS_TOKEN`: token pessoal criado em **Supabase Dashboard → Account → Access Tokens**.
+- `SUPABASE_DB_PASSWORD`: senha do banco do projeto hospedado.
+
+Recomenda-se adicionar aprovação obrigatória ao environment `production` e proteger a branch `main`, exigindo os checks **Application checks** e **Database migrations, RLS and pgTAP** antes do merge. A Vercel pode continuar fazendo o deploy da aplicação a partir da `main`; o workflow é responsável somente por validar o código e publicar migrations.
+
 ## Publicação na Vercel
 
 1. Conecte o repositório à Vercel.
 2. Cadastre todas as variáveis de `.env.example` no ambiente **Production**.
 3. Vincule `indicai.gbdev.pro` em **Settings → Domains** e aplique no DNS o CNAME indicado pela Vercel.
 4. Confirme que `NEXT_PUBLIC_APP_URL` usa exatamente `https://indicai.gbdev.pro`, sem `/` final.
-5. Aplique as migrations remotas com `npx supabase db push`.
+5. Confirme que o environment `production` do GitHub possui os segredos do Supabase; as migrations serão aplicadas pelo workflow após o merge.
 6. Faça o deploy e teste login, avatar, criação de grupo, convite, voto, conclusão, avaliação e mensagem com pelo menos dois usuários reais.
 
 Cabeçalhos de proteção contra framing, MIME sniffing e permissões desnecessárias são enviados por todas as rotas. HSTS é habilitado somente no build de produção.
