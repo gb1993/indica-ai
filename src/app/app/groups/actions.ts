@@ -4,14 +4,18 @@ import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createElement } from "react";
 
+import {
+  GroupInvitationEmail,
+  groupInvitationEmailText,
+} from "@/emails/group-invitation";
 import { getPublicEnv } from "@/lib/env";
 import type { ActionState } from "@/lib/action-state";
 import { createResendClient } from "@/lib/resend";
 import { createClient } from "@/lib/supabase/server";
 import {
   actionError,
-  escapeHtml,
   formString,
   groupSchema,
   invitationHash,
@@ -46,34 +50,54 @@ async function createAndSendInvitation(groupId: string, email: string) {
     const env = getPublicEnv();
     const { client, from } = createResendClient();
     const inviteUrl = `${env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
-    const safeGroupName = escapeHtml(group.name);
-    const { error: emailError } = await client.emails.send({
-      from,
-      to: email,
-      subject: `Convite para o grupo ${group.name}`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#17201b">
-          <h1 style="font-size:24px">Você foi convidado para o Indica Aí</h1>
-          <p>Você recebeu um convite para participar do grupo <strong>${safeGroupName}</strong>.</p>
-          <p>Este convite expira em 5 minutos e pode ser usado somente uma vez.</p>
-          <p style="margin:28px 0">
-            <a href="${inviteUrl}" style="background:#7c3aed;color:#ffffff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700">
-              Aceitar convite
-            </a>
-          </p>
-          <p style="font-size:12px;color:#66736a">Se você não esperava este convite, ignore este e-mail.</p>
-        </div>
-      `,
-    });
+    const { data: sentEmail, error: emailError } = await client.emails.send(
+      {
+        from,
+        to: email,
+        subject: `Convite para o grupo ${group.name}`,
+        react: createElement(GroupInvitationEmail, {
+          groupName: group.name,
+          inviteUrl,
+        }),
+        text: groupInvitationEmailText({ groupName: group.name, inviteUrl }),
+        tags: [
+          { name: "category", value: "group_invitation" },
+          { name: "invitation_id", value: invitationId as string },
+        ],
+      },
+      { idempotencyKey: `group-invitation/${invitationId}` },
+    );
 
-    if (emailError) throw new Error(emailError.message);
+    if (emailError || !sentEmail?.id) {
+      await supabase.rpc("record_group_invitation_email_result", {
+        p_invitation_id: invitationId,
+        p_status: "failed",
+        p_resend_email_id: null,
+      });
+      await supabase.rpc("cancel_group_invitation", {
+        p_invitation_id: invitationId,
+      });
+      console.error("Invitation email rejected by provider");
+      return { error: "O convite não pôde ser enviado. Verifique a configuração do Resend." };
+    }
+
+    const { error: trackingError } = await supabase.rpc(
+      "record_group_invitation_email_result",
+      {
+        p_invitation_id: invitationId,
+        p_status: "sent",
+        p_resend_email_id: sentEmail.id,
+      },
+    );
+    if (trackingError) console.error("Invitation email tracking failed");
+
     return { invitationId: invitationId as string };
   } catch {
-    await supabase.rpc("cancel_group_invitation", {
-      p_invitation_id: invitationId,
-    });
-    console.error("Invitation email failed");
-    return { error: "O convite não pôde ser enviado. Verifique a configuração do Resend." };
+    console.error("Invitation email delivery could not be confirmed");
+    return {
+      error:
+        "Não foi possível confirmar o envio. Aguarde um instante antes de tentar novamente.",
+    };
   }
 }
 
