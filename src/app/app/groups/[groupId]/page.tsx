@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentCard, type ContentCardData } from "@/components/content-card";
 import { EmptyState } from "@/components/empty-state";
-import { GroupTabs, type GroupTab } from "@/components/group-tabs";
 import { CONTENT_TYPES, CONTENT_TYPE_META, type ContentStatus, type ContentType } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,13 +25,10 @@ export default async function GroupPage({
   searchParams,
 }: {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ tab?: string; type?: string }>;
+  searchParams: Promise<{ type?: string }>;
 }) {
   const { groupId } = await params;
   const query = await searchParams;
-  const activeTab: GroupTab = ["pending", "approved", "completed"].includes(query.tab ?? "")
-    ? query.tab as GroupTab
-    : "overview";
   const activeType = CONTENT_TYPES.includes(query.type as ContentType) ? query.type as ContentType : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
@@ -56,10 +52,7 @@ export default async function GroupPage({
     } satisfies ContentCardData;
   });
   const filteredContents = activeType ? contents.filter((content) => content.type === activeType) : contents;
-  const visibleSections = activeTab === "overview"
-    ? sections
-    : sections.filter((section) => section.status === activeTab);
-  const firstVisibleContentId = visibleSections
+  const firstVisibleContentId = sections
     .flatMap((section) => filteredContents.filter((content) => content.status === section.status))
     .at(0)?.id;
 
@@ -78,20 +71,19 @@ export default async function GroupPage({
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href={`/app/groups/${groupId}/contents/new`} className="cursor-pointer rounded-xl bg-(--accent) px-4 py-2.5 text-sm font-bold text-[#07150c] transition hover:brightness-90">Adicionar conteúdo</Link>
+            <Link href={`/app/groups/${groupId}/metrics`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Métricas</Link>
             <Link href={`/app/groups/${groupId}/members`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Membros</Link>
+            <Link href={`/app/groups/${groupId}/activities`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Atividades</Link>
             {isOwner && <Link href={`/app/groups/${groupId}/settings`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Configurações</Link>}
           </div>
         </div>
       </section>
 
-      <GroupTabs groupId={groupId} active={activeTab} />
-
       <section aria-label="Filtrar conteúdos por tipo" className="mt-6">
         <div className="flex gap-2 overflow-x-auto pb-2">
-          <Link href={activeTab === "overview" ? `/app/groups/${groupId}` : `/app/groups/${groupId}?tab=${activeTab}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${!activeType ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>Todos</Link>
+          <Link href={`/app/groups/${groupId}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${!activeType ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>Todos</Link>
           {CONTENT_TYPES.map((type) => {
             const params = new URLSearchParams();
-            if (activeTab !== "overview") params.set("tab", activeTab);
             params.set("type", type);
             return (
               <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${activeType === type ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>
@@ -103,7 +95,7 @@ export default async function GroupPage({
       </section>
 
       <div className="mt-10 space-y-12">
-        {visibleSections.map((section) => {
+        {sections.map((section) => {
           const items = filteredContents.filter((content) => content.status === section.status);
           return (
             <section key={section.status}>

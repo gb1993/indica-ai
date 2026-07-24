@@ -12,7 +12,7 @@ Aplicação privada para grupos de amigos indicarem, votarem, avaliarem e conver
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env.local` no desenvolvimento e cadastre os mesmos nomes em **Vercel → Project Settings → Environment Variables** para produção:
+Para usar o Supabase hospedado ou configurar produção, copie `.env.example` para `.env.local` e preencha:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
@@ -30,16 +30,110 @@ As variáveis são validadas com Zod quando cada integração é inicializada. U
 
 ## Desenvolvimento local
 
-Pré-requisitos: Node.js 22+, npm, Supabase CLI e Docker Desktop.
+### Pré-requisitos
+
+- Node.js 22 ou superior
+- npm
+- Docker Desktop em execução
+
+A Supabase CLI é uma dependência de desenvolvimento do projeto e será instalada pelo npm. Não é necessário instalá-la globalmente.
+
+No Windows, se o PowerShell bloquear os arquivos `npm.ps1` ou `npx.ps1`, use `npm.cmd` e `npx.cmd`, conforme os exemplos abaixo. Em Linux ou macOS, use os mesmos comandos sem o sufixo `.cmd`.
+
+### 1. Instale as dependências
+
+```powershell
+npm.cmd install
+```
+
+Em Linux ou macOS:
 
 ```bash
 npm install
-npx supabase start
-npx supabase db reset
-npm run dev
 ```
 
-O reset aplica todas as migrations e depois executa `supabase/seed.sql`. O seed contém somente usuários e dados fictícios de desenvolvimento. Ele nunca é executado por `supabase db push` e não deve ser rodado manualmente no projeto remoto.
+### 2. Inicie o Supabase local
+
+Confirme primeiro que o Docker Desktop está aberto:
+
+```powershell
+docker info
+npx.cmd supabase start
+```
+
+Ao final, o comando mostrará as URLs e chaves locais. Para consultá-las novamente:
+
+```powershell
+npx.cmd supabase status
+```
+
+### 3. Configure as variáveis locais
+
+Crie `.env.development.local` na raiz do projeto:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=COLE_A_PUBLISHABLE_KEY_EXIBIDA_PELO_SUPABASE
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Use o valor `PUBLISHABLE_KEY` mostrado por `supabase start` ou `supabase status`. O arquivo `.env.development.local` é ignorado pelo Git e sobrescreve as variáveis públicas de `.env.local` somente durante `next dev`, preservando uma eventual configuração remota.
+
+`RESEND_API_KEY` e `RESEND_FROM_EMAIL` não são necessários para login local. Eles são exigidos apenas para testar o envio real de convites de grupo pela API do Resend.
+
+### 4. Aplique migrations e seed
+
+```powershell
+npx.cmd supabase db reset
+```
+
+O reset recria o banco, aplica todas as migrations e executa `supabase/seed.sql`. Ele também invalida sessões locais anteriores.
+
+O seed inclui o usuário `gbdev1993@gmail.com`, grupos, membros, conteúdos, votos, avaliações, mensagens, atividades e métricas. O seed contém somente dados de desenvolvimento, nunca é executado por `supabase db push` e não deve ser rodado manualmente no projeto remoto.
+
+### 5. Inicie o Next.js
+
+```powershell
+npm.cmd run dev
+```
+
+Acesse:
+
+- Aplicação: http://localhost:3000
+- Supabase Studio: http://127.0.0.1:54323
+- Mailpit: http://127.0.0.1:54324
+- API Supabase: http://127.0.0.1:54321
+
+### 6. Entre com o usuário seedado
+
+1. Abra http://localhost:3000.
+2. Informe `gbdev1993@gmail.com`.
+3. Abra o Mailpit em http://127.0.0.1:54324.
+4. Copie o código numérico de seis dígitos.
+5. Volte à aplicação e confirme o código.
+
+O e-mail local usa `supabase/templates/magic_link.html`, mas contém apenas `{{ .Token }}`. Nenhum magic link é enviado.
+
+### Stack opcional mais enxuta
+
+O projeto não usa Analytics, Vector, Realtime, Storage ou Edge Functions atualmente. Para iniciar somente os serviços necessários ao app e ao login por OTP:
+
+```powershell
+npx.cmd supabase stop
+npx.cmd supabase start -x analytics,vector,realtime,storage,edge-runtime,functions,studio,meta,imgproxy
+```
+
+Nesse modo, Supabase Studio não estará disponível, mas banco, Auth, API REST e Mailpit continuarão funcionando.
+
+### Encerrar o ambiente
+
+Encerre o Next.js com `Ctrl+C` no terminal em que ele está rodando e pare o Supabase:
+
+```powershell
+npx.cmd supabase stop
+```
+
+### Supabase hospedado
 
 Para trabalhar com o Supabase hospedado em vez da stack local:
 

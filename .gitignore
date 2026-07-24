@@ -3,7 +3,9 @@ node_modules/
 out/
 .env
 .env.local
+.env.development.production
 .env.*.local
 *.tsbuildinfo
 npm-debug.log*
 supabase/.temp/
+supabase/.branches/

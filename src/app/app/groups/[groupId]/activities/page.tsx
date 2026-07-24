@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { GroupTabs } from "@/components/group-tabs";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Atividades do grupo" };
@@ -81,8 +80,6 @@ export default async function GroupActivitiesPage({
         <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
         <p className="mt-2 text-(--muted)">Histórico privado das atividades do grupo.</p>
       </section>
-
-      <GroupTabs groupId={groupId} active="activities" />
 
       <section className="mt-8">
         <h2 className="text-2xl font-bold">Atividades</h2>

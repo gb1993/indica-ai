@@ -25,10 +25,10 @@ import {
   createContentMessage,
   deleteContentMessage,
   deleteContent,
-  getContentRatingSummary,
-  getContentVoteSummary,
   setContentVote,
   updateContentMessage,
+  type ContentRatingSummary,
+  type ContentVoteSummary,
 } from "../actions";
 
 export const metadata: Metadata = { title: "Detalhes do conteúdo" };
@@ -87,8 +87,8 @@ export default async function ContentDetailsPage({
   const [
     { data: group },
     { data: contentRow },
-    voteSummary,
-    ratingSummary,
+    voteSummaryResult,
+    ratingSummaryResult,
     { data: ratingRows, error: ratingsError },
     { data: messageRows, count: messageCount, error: messagesError },
   ] = await Promise.all([
@@ -99,8 +99,12 @@ export default async function ContentDetailsPage({
       .eq("id", contentId)
       .eq("group_id", groupId)
       .single(),
-    getContentVoteSummary(contentId),
-    getContentRatingSummary(contentId),
+    supabase.rpc("get_content_vote_summary", {
+      p_content_id: contentId,
+    }),
+    supabase.rpc("get_content_rating_summary", {
+      p_content_id: contentId,
+    }),
     supabase
       .from("content_ratings")
       .select("id, user_id, rating, comment, updated_at, author:profiles!content_ratings_user_id_fkey(name)")
@@ -114,7 +118,36 @@ export default async function ContentDetailsPage({
       .range(messagesFrom, messagesFrom + MESSAGES_PER_PAGE - 1),
   ]);
 
-  if (!group || !contentRow || !voteSummary || !ratingSummary) notFound();
+  if (!group || !contentRow) notFound();
+  if (
+    voteSummaryResult.error
+    || ratingSummaryResult.error
+    || !Array.isArray(voteSummaryResult.data)
+    || !voteSummaryResult.data[0]
+    || !Array.isArray(ratingSummaryResult.data)
+    || !ratingSummaryResult.data[0]
+  ) {
+    console.error("Content summaries failed", {
+      voteCode: voteSummaryResult.error?.code,
+      ratingCode: ratingSummaryResult.error?.code,
+    });
+    throw new Error("Unable to load content summaries");
+  }
+  const voteSummary = voteSummaryResult.data[0] as ContentVoteSummary;
+  const rawRatingSummary = ratingSummaryResult.data[0] as {
+    average_rating: number | string | null;
+    rating_count: number | string;
+    current_user_rating: number | string | null;
+  };
+  const ratingSummary: ContentRatingSummary = {
+    average_rating: rawRatingSummary.average_rating === null
+      ? null
+      : Number(rawRatingSummary.average_rating),
+    rating_count: Number(rawRatingSummary.rating_count),
+    current_user_rating: rawRatingSummary.current_user_rating === null
+      ? null
+      : Number(rawRatingSummary.current_user_rating),
+  };
   const content = contentRow as unknown as ContentDetails;
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
   const messages = (messageRows ?? []) as unknown as ContentMessage[];

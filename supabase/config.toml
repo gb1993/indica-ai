@@ -34,3 +34,7 @@ double_confirm_changes = true
 max_frequency = "1m"
 otp_length = 6
 otp_expiry = 300
+
+[auth.email.template.magic_link]
+subject = "Seu código de acesso — Indica Aí"
+content_path = "./supabase/templates/magic_link.html"

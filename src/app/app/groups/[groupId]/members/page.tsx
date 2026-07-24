@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { GroupTabs } from "@/components/group-tabs";
 import { InvitationForm } from "@/components/invitation-form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -73,7 +72,6 @@ export default async function GroupMembersPage({
         <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
         <p className="mt-2 text-(--muted)">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"}</p>
       </div>
-      <GroupTabs groupId={groupId} active="members" />
       {isOwner && (
         <section className="mb-6 mt-8 rounded-2xl border bg-(--surface) p-6">
           <h2 className="font-bold">Convidar por e-mail</h2>
