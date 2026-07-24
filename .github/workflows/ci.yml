@@ -25,6 +25,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_only
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      TMDB_API_KEY: tmdb_ci_only
       RESEND_API_KEY: re_ci_only
       RESEND_FROM_EMAIL: ci@example.com
 

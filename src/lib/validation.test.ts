@@ -136,8 +136,9 @@ test("rejeita conteúdo inseguro ou incompatível", () => {
   assert.equal(contentSchema.safeParse({ ...base, description: "<script>" }).success, false);
   assert.equal(contentSchema.safeParse({ ...base, thumbnailUrl: "http://example.com/a.jpg" }).success, false);
   assert.equal(contentSchema.safeParse({ ...base, trailerUrl: "https://example.com/video" }).success, false);
-  assert.equal(contentSchema.safeParse({ ...base, type: "book", trailerUrl: `https://youtu.be/${youtubeId}` }).success, false);
-  assert.equal(contentSchema.safeParse({ ...base, type: "book" }).success, true);
+  assert.equal(contentSchema.safeParse({ ...base, type: "documentary", trailerUrl: `https://youtu.be/${youtubeId}` }).success, true);
+  assert.equal(contentSchema.safeParse({ ...base, type: "series" }).success, true);
+  assert.equal(contentSchema.safeParse({ ...base, type: "book" }).success, false);
   assert.equal(contentSchema.safeParse({ ...base, type: "game" }).success, false);
 });
 

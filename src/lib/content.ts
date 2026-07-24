@@ -1,9 +1,7 @@
 export const CONTENT_TYPES = [
   "movie",
   "series",
-  "anime",
   "documentary",
-  "book",
 ] as const;
 
 export type ContentType = (typeof CONTENT_TYPES)[number];
@@ -12,9 +10,7 @@ export type ContentStatus = "pending" | "approved" | "completed";
 export const CONTENT_TYPE_META: Record<ContentType, { label: string; icon: string }> = {
   movie: { label: "Filme", icon: "🎬" },
   series: { label: "Série", icon: "📺" },
-  anime: { label: "Anime", icon: "✨" },
   documentary: { label: "Documentário", icon: "🎥" },
-  book: { label: "Livro", icon: "📚" },
 };
 
 export const CONTENT_STATUS_META: Record<ContentStatus, { label: string }> = {

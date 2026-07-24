@@ -42,6 +42,8 @@ type ContentDetails = {
   description: string | null;
   thumbnail_url: string | null;
   trailer_url: string | null;
+  tmdb_id: number | null;
+  tmdb_media_type: "movie" | "tv" | null;
   status: ContentStatus;
   completed_at: string | null;
   completed_by: string | null;
@@ -95,7 +97,7 @@ export default async function ContentDetailsPage({
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase
       .from("contents")
-      .select("id, group_id, created_by, type, title, description, thumbnail_url, trailer_url, status, completed_at, completed_by, created_at, creator:profiles!contents_created_by_fkey(name), completer:profiles!contents_completed_by_fkey(name)")
+      .select("id, group_id, created_by, type, title, description, thumbnail_url, trailer_url, tmdb_id, tmdb_media_type, status, completed_at, completed_by, created_at, creator:profiles!contents_created_by_fkey(name), completer:profiles!contents_completed_by_fkey(name)")
       .eq("id", contentId)
       .eq("group_id", groupId)
       .single(),
@@ -187,6 +189,21 @@ export default async function ContentDetailsPage({
                 <dt>Cadastrado em</dt>
                 <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.created_at))}</dd>
               </div>
+              {content.tmdb_id && content.tmdb_media_type ? (
+                <div className="flex justify-between gap-4">
+                  <dt>Fonte</dt>
+                  <dd>
+                    <a
+                      href={`https://www.themoviedb.org/${content.tmdb_media_type}/${content.tmdb_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-(--accent-strong) hover:underline"
+                    >
+                      TMDB #{content.tmdb_id}
+                    </a>
+                  </dd>
+                </div>
+              ) : null}
               {content.completed_at ? (
                 <>
                   <div className="flex justify-between gap-4">
@@ -285,13 +302,13 @@ export default async function ContentDetailsPage({
         <section className="app-panel mt-6 p-6 sm:p-8">
           <h2 className="text-xl font-bold">Concluir conteúdo</h2>
           <p className="mt-2 text-sm text-(--muted)">
-            Qualquer membro ativo pode informar que este {content.type === "book" ? "livro foi lido" : "conteúdo foi assistido"}.
+            Qualquer membro ativo pode informar que este conteúdo foi assistido.
           </p>
           <ActionForm
             action={completeContent}
-            submitLabel={content.type === "book" ? "Marcar como lido" : "Marcar como assistido"}
+            submitLabel="Marcar como assistido"
             pendingLabel="Concluindo…"
-            confirmMessage={`Confirmar que este conteúdo foi ${content.type === "book" ? "lido" : "assistido"}?`}
+            confirmMessage="Confirmar que este conteúdo foi assistido?"
             className="mt-5 space-y-3"
             buttonClassName="app-button-primary disabled:opacity-60"
           >
