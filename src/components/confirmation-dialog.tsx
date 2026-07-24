@@ -43,7 +43,7 @@ export function ConfirmationDialog({
       onClose={() => {
         if (open) onCancel();
       }}
-      className="m-auto w-[min(92vw,28rem)] rounded-3xl border bg-(--surface) p-0 text-(--foreground) shadow-2xl backdrop:bg-black/60"
+      className="m-auto w-[min(92vw,28rem)] rounded-2xl border bg-(--surface) p-0 text-(--foreground) shadow-2xl backdrop:bg-black/70"
     >
       <div className="p-6 sm:p-7">
         <h2 id="confirmation-title" className="text-xl font-bold">Confirmar ação</h2>

@@ -23,6 +23,14 @@ test("normaliza formatos HTTPS permitidos do YouTube", () => {
     normalizeYouTubeVideoId(`https://www.youtube.com/embed/${videoId}`),
     videoId,
   );
+  assert.equal(
+    normalizeYouTubeVideoId(`https://youtube.com/live/${videoId}`),
+    videoId,
+  );
+  assert.equal(
+    normalizeYouTubeVideoId(`  https://youtube.com/watch?v=${videoId}  `),
+    videoId,
+  );
 });
 
 test("rejeita protocolos, hosts, credenciais e IDs inválidos", () => {
@@ -42,6 +50,10 @@ test("rejeita protocolos, hosts, credenciais e IDs inválidos", () => {
     normalizeYouTubeVideoId("https://youtube.com/watch?v=curto"),
     null,
   );
+  assert.equal(normalizeYouTubeVideoId("não é uma URL"), null);
+  assert.equal(normalizeYouTubeVideoId(`https://example.com/watch?v=${videoId}`), null);
+  assert.equal(normalizeYouTubeVideoId("https://youtube.com/channel/teste"), null);
+  assert.equal(normalizeYouTubeVideoId("https://youtu.be/"), null);
 });
 
 test("gera apenas URLs conhecidas a partir do ID já normalizado", () => {

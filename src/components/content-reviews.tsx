@@ -187,7 +187,7 @@ export function ContentReviews({ reviews }: { reviews: ContentReview[] }) {
         ref={dialogRef}
         aria-labelledby="all-reviews-title"
         onClose={() => openButtonRef.current?.focus()}
-        className="m-auto max-h-[85vh] w-[min(92vw,44rem)] rounded-3xl border bg-(--surface) p-0 text-(--foreground) shadow-2xl backdrop:bg-black/60"
+        className="m-auto max-h-[85vh] w-[min(92vw,44rem)] rounded-2xl border bg-(--surface) p-0 text-(--foreground) shadow-2xl backdrop:bg-black/70"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-(--surface) p-5 sm:px-7">
           <div>

@@ -4,7 +4,7 @@ type Theme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "indica-ai-theme";
 
-export function ThemeToggle() {
+export function ThemeToggle({ showLabel = false }: { showLabel?: boolean }) {
   function toggleTheme() {
     const nextTheme: Theme = document.documentElement.classList.contains("dark")
       ? "light"
@@ -20,10 +20,20 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       aria-label="Alternar tema claro ou escuro"
       title="Alternar tema"
-      className="grid size-10 place-items-center rounded-xl border bg-(--surface-muted) text-lg transition"
+      className={`flex items-center rounded-xl border bg-(--surface-muted) text-sm transition ${
+        showLabel ? "h-11 w-full justify-between gap-3 px-3.5" : "size-10 justify-center"
+      }`}
     >
-      <span aria-hidden="true" className="dark:hidden">☾</span>
-      <span aria-hidden="true" className="hidden dark:inline">☀</span>
+      {showLabel ? <span className="font-medium">Tema</span> : null}
+      <span className="flex items-center gap-2">
+        <span aria-hidden="true" className="text-lg dark:hidden">☾</span>
+        <span aria-hidden="true" className="hidden text-lg dark:inline">☀</span>
+        {showLabel ? (
+          <span aria-hidden className="relative h-5 w-9 rounded-full bg-(--border)">
+            <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-(--muted) transition-all dark:translate-x-4 dark:bg-(--accent-strong)" />
+          </span>
+        ) : null}
+      </span>
     </button>
   );
 }

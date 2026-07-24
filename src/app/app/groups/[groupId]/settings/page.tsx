@@ -25,13 +25,14 @@ export default async function GroupSettingsPage({
   if (!group || membership?.role !== "owner") notFound();
 
   return (
-    <main id="main-content" className="mx-auto max-w-2xl px-5 py-10 sm:py-12">
+    <main id="main-content" className="app-page max-w-3xl">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Configurações" }]} />
-      <section className="mt-6 rounded-3xl border bg-(--surface) p-7 sm:p-9">
+      <section className="app-panel mt-6 p-7 sm:p-9">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-(--accent-strong)">Gerenciar grupo</p>
         <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
         <div className="mt-6"><GroupForm group={group} /></div>
       </section>
-      <section className="mt-6 rounded-3xl border border-red-500/30 bg-red-500/5 p-7">
+      <section className="mt-6 rounded-2xl border border-red-500/30 bg-red-500/5 p-7">
         <h2 className="text-lg font-bold text-red-500">Excluir grupo</h2>
         <p className="mt-2 text-sm text-(--muted)">Esta ação remove o grupo, seus membros e convites permanentemente.</p>
         <ActionForm

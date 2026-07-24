@@ -163,10 +163,10 @@ export default async function ContentDetailsPage({
   const totalMessagePages = Math.max(1, Math.ceil((messageCount ?? 0) / MESSAGES_PER_PAGE));
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+    <main id="main-content" className="app-page max-w-5xl">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: content.title }]} />
 
-      <article className="mt-6 overflow-hidden rounded-3xl border bg-(--surface)">
+      <article className="app-panel mt-6 overflow-hidden">
         <div className="grid md:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
           <div className="relative min-h-72 bg-(--surface-muted) md:min-h-120">
             <ContentThumbnail src={content.thumbnail_url} alt={`Capa de ${content.title}`} title={content.title} eager />
@@ -204,7 +204,7 @@ export default async function ContentDetailsPage({
         </div>
       </article>
 
-      <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
+      <section className="app-panel mt-6 p-6 sm:p-8">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
           <div>
             <h2 className="text-xl font-bold">Votação</h2>
@@ -260,7 +260,7 @@ export default async function ContentDetailsPage({
               submitLabel={voteSummary.current_user_vote === true ? "Favorável — seu voto" : "Votar favorável"}
               pendingLabel="Registrando…"
               className="space-y-2"
-              buttonClassName="w-full rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+              buttonClassName="app-button-primary w-full disabled:opacity-60"
             >
               <input type="hidden" name="groupId" value={groupId} />
               <input type="hidden" name="contentId" value={content.id} />
@@ -271,7 +271,7 @@ export default async function ContentDetailsPage({
               submitLabel={voteSummary.current_user_vote === false ? "Contrário — seu voto" : "Votar contrário"}
               pendingLabel="Registrando…"
               className="space-y-2"
-              buttonClassName="w-full rounded-xl border bg-(--surface-muted) px-5 py-3 font-bold disabled:opacity-60"
+              buttonClassName="app-button-secondary w-full disabled:opacity-60"
             >
               <input type="hidden" name="groupId" value={groupId} />
               <input type="hidden" name="contentId" value={content.id} />
@@ -282,7 +282,7 @@ export default async function ContentDetailsPage({
       </section>
 
       {content.status === "approved" ? (
-        <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
+        <section className="app-panel mt-6 p-6 sm:p-8">
           <h2 className="text-xl font-bold">Concluir conteúdo</h2>
           <p className="mt-2 text-sm text-(--muted)">
             Qualquer membro ativo pode informar que este {content.type === "book" ? "livro foi lido" : "conteúdo foi assistido"}.
@@ -293,7 +293,7 @@ export default async function ContentDetailsPage({
             pendingLabel="Concluindo…"
             confirmMessage={`Confirmar que este conteúdo foi ${content.type === "book" ? "lido" : "assistido"}?`}
             className="mt-5 space-y-3"
-            buttonClassName="rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+            buttonClassName="app-button-primary disabled:opacity-60"
           >
             <input type="hidden" name="groupId" value={groupId} />
             <input type="hidden" name="contentId" value={content.id} />
@@ -302,7 +302,7 @@ export default async function ContentDetailsPage({
       ) : null}
 
       {content.status === "completed" ? (
-        <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
+        <section className="app-panel mt-6 p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
               <h2 className="text-xl font-bold">Avaliações</h2>
@@ -338,7 +338,7 @@ export default async function ContentDetailsPage({
       ) : null}
 
       {content.trailer_url ? (
-        <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
+        <section className="app-panel mt-6 p-6 sm:p-8">
           <div className="mb-5 flex items-center justify-between gap-4">
             <h2 className="text-xl font-bold">Trailer</h2>
             <a href={youtubeWatchUrl(content.trailer_url)} target="_blank" rel="noopener noreferrer" className="text-sm text-(--accent-strong) hover:underline">Abrir no YouTube</a>
@@ -357,7 +357,7 @@ export default async function ContentDetailsPage({
         </section>
       ) : null}
 
-      <section className="mt-8 rounded-3xl border bg-(--surface) p-6 sm:p-8">
+      <section className="app-panel mt-6 p-6 sm:p-8">
         <div>
           <h2 className="text-xl font-bold">Conversa</h2>
           <p className="mt-1 text-sm text-(--muted)">Esta conversa é privada para os membros ativos do grupo.</p>
@@ -369,7 +369,7 @@ export default async function ContentDetailsPage({
           pendingLabel="Publicando…"
           resetOnSuccess
           className="mt-6 space-y-3"
-          buttonClassName="rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+          buttonClassName="app-button-primary disabled:opacity-60"
         >
           <input type="hidden" name="groupId" value={groupId} />
           <input type="hidden" name="contentId" value={content.id} />
@@ -381,7 +381,7 @@ export default async function ContentDetailsPage({
             maxLength={2000}
             rows={4}
             placeholder="Escreva uma mensagem…"
-            className="w-full resize-y rounded-xl border bg-(--surface-muted) px-4 py-3"
+            className="app-input resize-y"
           />
         </ActionForm>
 
@@ -421,7 +421,7 @@ export default async function ContentDetailsPage({
                               <input type="hidden" name="contentId" value={content.id} />
                               <input type="hidden" name="messageId" value={message.id} />
                               <label htmlFor={`message-${message.id}`} className="sr-only">Editar mensagem</label>
-                              <textarea id={`message-${message.id}`} name="content" required maxLength={2000} rows={2} defaultValue={message.content} className="w-full resize-y rounded-lg border bg-(--surface) px-3 py-2 text-sm" />
+                              <textarea id={`message-${message.id}`} name="content" required maxLength={2000} rows={2} defaultValue={message.content} className="app-input resize-y text-sm" />
                             </ActionForm>
                             <ActionForm
                               action={deleteContentMessage}
@@ -462,7 +462,7 @@ export default async function ContentDetailsPage({
       </section>
 
       {canManage ? (
-        <section className="mt-8 rounded-3xl border bg-(--surface) p-7 sm:p-9">
+        <section className="app-panel mt-6 p-7 sm:p-9">
           <h2 className="text-2xl font-bold">Editar conteúdo</h2>
           <p className="mt-2 text-sm text-(--muted)">Você pode alterar sua indicação enquanto ela estiver aguardando aprovação.</p>
           <div className="mt-6">

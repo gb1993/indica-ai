@@ -2,42 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
 import type { ActionState } from "@/lib/action-state";
-import {
-  CONTENT_TYPES,
-  normalizeYouTubeVideoId,
-} from "@/lib/content";
+import { normalizeYouTubeVideoId } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
-
-const uuidSchema = z.uuid();
-const voteSchema = z.object({
-  groupId: uuidSchema,
-  contentId: uuidSchema,
-  vote: z.enum(["true", "false"]).transform((value) => value === "true"),
-});
-const ratingSchema = z.object({
-  groupId: uuidSchema,
-  contentId: uuidSchema,
-  rating: z.coerce.number().int("A avaliação deve ser um número inteiro.").min(1).max(5),
-  comment: z.string()
-    .transform((value) => value.replace(/\s+/g, " ").trim())
-    .pipe(z.string().max(500, "O comentário deve ter no máximo 500 caracteres."))
-    .refine((value) => !/[<>]/.test(value), "O comentário deve conter somente texto, sem HTML."),
-});
-const messageContentSchema = z.string()
-  .transform((value) => value.replace(/\s+/g, " ").trim())
-  .pipe(z.string().min(1, "Escreva uma mensagem.").max(2000, "A mensagem deve ter no máximo 2.000 caracteres."))
-  .refine((value) => !/[<>]/.test(value), "A mensagem deve conter somente texto, sem HTML.");
-const newMessageSchema = z.object({
-  groupId: uuidSchema,
-  contentId: uuidSchema,
-  content: messageContentSchema,
-});
-const editMessageSchema = newMessageSchema.extend({
-  messageId: uuidSchema,
-});
+import {
+  actionError,
+  deleteMessageSchema,
+  editMessageSchema,
+  formString,
+  newMessageSchema,
+  parseContentForm,
+  ratingSchema,
+  uuidSchema,
+  voteSchema,
+} from "@/lib/validation";
 
 export type ContentVoteSummary = {
   favorable_votes: number;
@@ -54,78 +33,11 @@ export type ContentRatingSummary = {
   current_user_rating: number | null;
 };
 
-function isSafeHttpsUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password;
-  } catch {
-    return false;
-  }
-}
-
-const contentSchema = z.object({
-  groupId: uuidSchema,
-  type: z.enum(CONTENT_TYPES),
-  title: z.string().trim().min(1, "Informe o título.").max(160, "O título deve ter no máximo 160 caracteres."),
-  description: z.string().trim().max(4000, "A descrição deve ter no máximo 4.000 caracteres.").refine(
-    (value) => !/[<>]/.test(value),
-    "A descrição deve conter somente texto, sem HTML.",
-  ),
-  thumbnailUrl: z.string().trim().max(2048).refine(
-    (value) => !value || isSafeHttpsUrl(value),
-    "Informe uma URL HTTPS válida para a thumbnail.",
-  ),
-  trailerUrl: z.string().trim().max(2048),
-}).superRefine((value, context) => {
-  if (value.type === "book") {
-    if (value.trailerUrl) {
-      context.addIssue({
-        code: "custom",
-        path: ["trailerUrl"],
-        message: "Livros não possuem trailer.",
-      });
-    }
-    return;
-  }
-
-  if (value.trailerUrl && !normalizeYouTubeVideoId(value.trailerUrl)) {
-    context.addIssue({
-      code: "custom",
-      path: ["trailerUrl"],
-      message: "Informe um link HTTPS válido do YouTube.",
-    });
-  }
-});
-
-function formString(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : "";
-}
-
-function actionError(message: string, error?: z.ZodError): ActionState {
-  return {
-    status: "error",
-    message,
-    fieldErrors: error ? z.flattenError(error).fieldErrors : undefined,
-  };
-}
-
-function parseContent(formData: FormData) {
-  return contentSchema.safeParse({
-    groupId: formString(formData, "groupId"),
-    type: formString(formData, "type"),
-    title: formString(formData, "title"),
-    description: formString(formData, "description"),
-    thumbnailUrl: formString(formData, "thumbnailUrl"),
-    trailerUrl: formString(formData, "trailerUrl"),
-  });
-}
-
 export async function createContent(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const parsed = parseContent(formData);
+  const parsed = parseContentForm(formData);
   if (!parsed.success) return actionError("Revise os dados do conteúdo.", parsed.error);
 
   const supabase = await createClient();
@@ -163,7 +75,7 @@ export async function updateContent(
   formData: FormData,
 ): Promise<ActionState> {
   const contentId = uuidSchema.safeParse(formString(formData, "contentId"));
-  const parsed = parseContent(formData);
+  const parsed = parseContentForm(formData);
   if (!contentId.success || !parsed.success) {
     return actionError(
       "Revise os dados do conteúdo.",
@@ -388,11 +300,7 @@ export async function deleteContentMessage(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const parsed = z.object({
-    groupId: uuidSchema,
-    contentId: uuidSchema,
-    messageId: uuidSchema,
-  }).safeParse({
+  const parsed = deleteMessageSchema.safeParse({
     groupId: formString(formData, "groupId"),
     contentId: formString(formData, "contentId"),
     messageId: formString(formData, "messageId"),

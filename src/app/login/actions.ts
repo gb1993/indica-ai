@@ -1,9 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  requestCodeSchema,
+  safeNextPath,
+  verifyCodeSchema,
+} from "@/lib/validation";
 
 export type RequestCodeState = {
   status: "idle" | "sent" | "error";
@@ -16,35 +20,6 @@ export type VerifyCodeState = {
   status: "idle" | "error";
   message: string;
 };
-
-const emailSchema = z.preprocess(
-  (value) =>
-    typeof value === "string" ? value.trim().toLowerCase() : value,
-  z.email("Informe um e-mail válido.").max(254),
-);
-
-const requestCodeSchema = z.object({
-  email: emailSchema,
-});
-
-const verifyCodeSchema = z.object({
-  email: emailSchema,
-  token: z.preprocess(
-    (value) =>
-      typeof value === "string" ? value.replace(/\s/g, "") : value,
-    z
-      .string()
-      .regex(/^\d{6,10}$/, "Informe o código numérico recebido por e-mail."),
-  ),
-  next: z.string().max(300).optional(),
-});
-
-function safeNextPath(value: unknown) {
-  if (typeof value !== "string") return "/dashboard";
-  return value.startsWith("/invite/") && !value.startsWith("//")
-    ? value
-    : "/dashboard";
-}
 
 export async function requestEmailCode(
   _previousState: RequestCodeState,

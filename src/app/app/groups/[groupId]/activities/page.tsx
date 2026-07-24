@@ -74,33 +74,36 @@ export default async function GroupActivitiesPage({
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / ACTIVITIES_PER_PAGE));
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+    <main id="main-content" className="app-page max-w-5xl">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Atividades" }]} />
-      <section className="mt-6 rounded-3xl border bg-(--surface) p-7 sm:p-9">
-        <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
-        <p className="mt-2 text-(--muted)">Histórico privado das atividades do grupo.</p>
-      </section>
+      <header className="mt-5">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-(--accent-strong)">Histórico do grupo</p>
+        <h1 className="text-3xl font-bold tracking-tight">Atividades</h1>
+        <p className="mt-2 text-sm text-(--muted)">Histórico privado de {group.name}.</p>
+      </header>
 
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold">Atividades</h2>
+      <section className="mt-7">
         {error ? (
           <p role="alert" className="mt-4 rounded-xl bg-red-500/10 p-4 text-sm text-red-500">Não foi possível carregar as atividades.</p>
         ) : activities.length ? (
-          <ol className="mt-5 space-y-3">
+          <ol className="space-y-3">
             {activities.map((activity) => (
-              <li key={activity.id} className="rounded-2xl border bg-(--surface) p-5">
-                <p className="leading-relaxed">
-                  <strong>{activity.actor?.name ?? metadataText(activity.metadata, "actor_name") ?? "Sistema"}</strong>{" "}
-                  <span className="text-(--muted)">{activityDescription(activity)}</span>
-                </p>
-                <time dateTime={activity.created_at} className="mt-2 block text-xs text-(--muted)">
-                  {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(activity.created_at))}
-                </time>
+              <li key={activity.id} className="app-panel flex gap-4 p-5">
+                <span aria-hidden className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-(--accent-soft) text-(--accent-strong)">◇</span>
+                <div>
+                  <p className="leading-relaxed">
+                    <strong>{activity.actor?.name ?? metadataText(activity.metadata, "actor_name") ?? "Sistema"}</strong>{" "}
+                    <span className="text-(--muted)">{activityDescription(activity)}</span>
+                  </p>
+                  <time dateTime={activity.created_at} className="mt-2 block text-xs text-(--muted)">
+                    {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(activity.created_at))}
+                  </time>
+                </div>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="mt-5 rounded-2xl border border-dashed bg-(--surface) p-7 text-sm text-(--muted)">Nenhuma atividade registrada ainda.</p>
+          <p className="rounded-2xl border border-dashed bg-(--surface) p-7 text-sm text-(--muted)">Nenhuma atividade registrada ainda.</p>
         )}
 
         {!error && totalPages > 1 ? (

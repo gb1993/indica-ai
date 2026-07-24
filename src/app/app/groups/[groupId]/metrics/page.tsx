@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AppIcon } from "@/components/app-icon";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { ContentThumbnail } from "@/components/content-thumbnail";
 import { EmptyState } from "@/components/empty-state";
 import { CONTENT_TYPE_META, type ContentType } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
@@ -34,16 +36,34 @@ type DiscussedContent = {
   message_count: number;
 };
 
-function rankLabel(index: number) {
-  return `${index + 1}º`;
+function RankBadge({ position }: { position: number }) {
+  const medalStyles = [
+    "bg-[linear-gradient(145deg,#ffe28a,#eaa90d)] text-[#3d2a00]",
+    "bg-[linear-gradient(145deg,#eef2f7,#9da8ba)] text-[#273244]",
+    "bg-[linear-gradient(145deg,#f2b66d,#a45a20)] text-[#321700]",
+  ];
+
+  return (
+    <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black shadow-md ${
+      medalStyles[position - 1] ?? "bg-[#b9c1d1] text-[#252b38]"
+    }`}>
+      {position}
+    </span>
+  );
 }
 
-function RankingBar({ value, maximum }: { value: number; maximum: number }) {
-  const width = maximum > 0 ? Math.max(6, Math.round((value / maximum) * 100)) : 0;
+function MemberInitial({ name }: { name: string }) {
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+
   return (
-    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-(--surface-muted)" aria-hidden>
-      <div className="h-full rounded-full bg-(--accent)" style={{ width: `${width}%` }} />
-    </div>
+    <span className="grid size-9 shrink-0 place-items-center rounded-full border bg-[linear-gradient(145deg,#4c2b89,#171d2c)] text-xs font-bold text-white">
+      {initials || "M"}
+    </span>
   );
 }
 
@@ -61,7 +81,7 @@ export default async function GroupMetricsPage({
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase
       .from("group_members")
-      .select("id")
+      .select("id, role")
       .eq("group_id", groupId)
       .eq("user_id", authData.user.id)
       .eq("status", "active")
@@ -78,11 +98,19 @@ export default async function GroupMetricsPage({
   const ratedContents = (ratedResult.data ?? []) as RatedContent[];
   const activeMembers = (activeResult.data ?? []) as ActiveMember[];
   const discussedContents = (discussedResult.data ?? []) as DiscussedContent[];
-  const maximumActivity = activeMembers[0]?.activity_score ?? 0;
-  const maximumMessages = discussedContents[0]?.message_count ?? 0;
+  const rankedIds = [...new Set([
+    ...ratedContents.map((content) => content.content_id),
+    ...discussedContents.map((content) => content.content_id),
+  ])];
+  const { data: contentImages } = rankedIds.length
+    ? await supabase.from("contents").select("id, thumbnail_url").in("id", rankedIds)
+    : { data: [] as Array<{ id: string; thumbnail_url: string | null }> };
+  const thumbnails = new Map(
+    (contentImages ?? []).map((content) => [content.id, content.thumbnail_url]),
+  );
 
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
+    <main id="main-content" className="mx-auto max-w-[92rem] px-5 py-8 sm:px-7 sm:py-10">
       <Breadcrumbs
         items={[
           { label: "Grupos", href: "/dashboard" },
@@ -90,131 +118,188 @@ export default async function GroupMetricsPage({
           { label: "Métricas" },
         ]}
       />
-      <section className="mt-6 rounded-3xl border bg-(--surface) p-7 sm:p-9">
-        <p className="text-sm font-semibold text-(--accent-strong)">Dashboard do grupo</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{group.name}</h1>
-        <p className="mt-3 max-w-2xl text-(--muted)">
-          Rankings calculados com as contribuições dos membros ativos.
-        </p>
-      </section>
+
+      <header className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard do Grupo</h1>
+          <p className="mt-2 text-sm text-(--muted)">
+            Acompanhe os destaques e a participação em {group.name}.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {membership.role === "owner" ? (
+            <Link href={`/app/groups/${groupId}/settings`} className="app-button-secondary">
+              <AppIcon name="settings" className="size-4" />
+              Gerenciar grupo
+            </Link>
+          ) : null}
+          <Link href={`/app/groups/${groupId}/members`} className="app-button-primary">
+            <AppIcon name="users" className="size-4" />
+            Membros
+          </Link>
+        </div>
+      </header>
 
       {hasError ? (
-        <p role="alert" className="mt-8 rounded-2xl bg-red-500/10 p-5 text-sm text-red-500">
+        <p role="alert" className="mt-8 rounded-xl border border-red-500/25 bg-red-500/10 p-5 text-sm text-red-400">
           Não foi possível carregar as métricas do grupo.
         </p>
       ) : (
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-3xl border bg-(--surface) p-6 sm:p-7">
-            <div>
-              <p className="text-sm font-semibold text-(--accent-strong)">Top 5</p>
-              <h2 className="mt-1 text-2xl font-bold">Conteúdos mais bem avaliados</h2>
-              <p className="mt-2 text-sm text-(--muted)">
-                Média das avaliações feitas pelos membros ativos.
-              </p>
+        <div className="mt-7 space-y-5">
+          <section className="app-panel p-5 sm:p-6">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+              <div>
+                <h2 className="flex items-center gap-3 text-xl font-bold">
+                  <span aria-hidden className="text-2xl text-(--gold)">★</span>
+                  Melhores avaliados
+                </h2>
+                <p className="mt-1 text-sm text-(--muted)">
+                  Conteúdos com as maiores médias de avaliação do grupo.
+                </p>
+              </div>
+              <Link href={`/app/groups/${groupId}`} className="app-button-secondary min-h-9 px-3 py-2 text-xs">
+                Ver conteúdos
+              </Link>
             </div>
+
             {ratedContents.length ? (
-              <ol className="mt-6 divide-y">
+              <ol className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {ratedContents.map((content, index) => (
                   <li key={content.content_id}>
                     <Link
                       href={`/app/groups/${groupId}/contents/${content.content_id}`}
-                      className="flex items-center gap-4 py-4 transition hover:text-(--accent-strong)"
+                      className="group block h-full overflow-hidden rounded-xl border bg-(--surface) transition hover:-translate-y-1 hover:border-(--accent) motion-reduce:hover:translate-y-0"
                     >
-                      <span className="w-8 text-lg font-black text-(--muted)">{rankLabel(index)}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold">{content.title}</span>
-                        <span className="mt-1 block text-xs text-(--muted)">
-                          {CONTENT_TYPE_META[content.type].label} · {content.rating_count}{" "}
-                          {content.rating_count === 1 ? "avaliação" : "avaliações"}
+                      <div className="relative aspect-[4/3] overflow-hidden bg-(--surface-muted)">
+                        <ContentThumbnail
+                          src={thumbnails.get(content.content_id) ?? null}
+                          alt={`Capa de ${content.title}`}
+                          title={content.title}
+                          eager={index < 3}
+                        />
+                        <div className="absolute left-3 top-3">
+                          <RankBadge position={index + 1} />
+                        </div>
+                      </div>
+                      <div className="p-3.5">
+                        <span className="inline-flex rounded-full bg-(--accent-soft) px-2 py-1 text-[0.65rem] text-(--accent-strong)">
+                          {CONTENT_TYPE_META[content.type].label}
                         </span>
-                      </span>
-                      <strong className="shrink-0 text-lg">
-                        {Number(content.average_rating).toFixed(1)} ★
-                      </strong>
+                        <h3 className="mt-2 line-clamp-2 min-h-10 text-sm font-bold leading-5 group-hover:text-(--accent-strong)">
+                          {content.title}
+                        </h3>
+                        <p className="mt-3 flex items-center gap-2 text-sm">
+                          <strong className="text-(--gold)">★ {Number(content.average_rating).toFixed(1)}</strong>
+                          <span className="text-xs text-(--muted)">
+                            {content.rating_count} {content.rating_count === 1 ? "avaliação" : "avaliações"}
+                          </span>
+                        </p>
+                      </div>
                     </Link>
                   </li>
                 ))}
               </ol>
             ) : (
-              <div className="mt-6">
+              <div className="mt-5">
                 <EmptyState
                   title="Sem avaliações"
                   description="Os conteúdos concluídos e avaliados aparecerão neste ranking."
                 />
               </div>
             )}
+            <p className="mt-5 text-xs text-(--muted)">
+              <span className="mr-1 text-(--accent-strong)">ⓘ</span>
+              O ranking considera avaliações feitas por membros ativos.
+            </p>
           </section>
 
-          <section className="rounded-3xl border bg-(--surface) p-6 sm:p-7">
-            <div>
-              <p className="text-sm font-semibold text-(--accent-strong)">Top 5</p>
-              <h2 className="mt-1 text-2xl font-bold">Membros mais ativos</h2>
-              <p className="mt-2 text-sm text-(--muted)">
-                Soma de indicações, votos, avaliações e mensagens.
+          <section className="app-panel overflow-hidden">
+            <div className="flex flex-col justify-between gap-3 p-5 sm:flex-row sm:items-start sm:p-6">
+              <div>
+                <h2 className="flex items-center gap-3 text-xl font-bold">
+                  <AppIcon name="users" className="size-6 text-(--accent-strong)" />
+                  Membros mais participativos
+                </h2>
+                <p className="mt-1 text-sm text-(--muted)">Ranking de participação dos membros do grupo.</p>
+              </div>
+              <p className="max-w-md text-xs leading-relaxed text-(--muted) sm:text-right">
+                Cada conteúdo, voto, avaliação e mensagem soma um ponto.
               </p>
             </div>
+
             {activeMembers.length ? (
-              <ol className="mt-6 space-y-3">
-                {activeMembers.map((member, index) => (
-                  <li key={member.member_id} className="rounded-2xl border p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 text-lg font-black text-(--muted)">
-                        {rankLabel(index)}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate font-semibold">{member.name}</span>
-                      <strong>{member.activity_score} pts</strong>
-                    </div>
-                    <RankingBar value={member.activity_score} maximum={maximumActivity} />
-                    <p className="mt-3 text-xs text-(--muted)">
-                      {member.content_count} indicações · {member.vote_count} votos ·{" "}
-                      {member.rating_count} avaliações · {member.message_count} mensagens
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            ) : null}
+              <div className="overflow-x-auto px-3 pb-4 sm:px-5">
+                <table className="w-full min-w-[760px] border-separate border-spacing-0 overflow-hidden rounded-xl border text-sm">
+                  <thead className="bg-(--surface-muted) text-left text-xs font-medium text-(--muted)">
+                    <tr>
+                      <th className="px-5 py-3">Posição</th>
+                      <th className="px-4 py-3">Membro</th>
+                      <th className="px-4 py-3 text-center">Conteúdos</th>
+                      <th className="px-4 py-3 text-center">Votos</th>
+                      <th className="px-4 py-3 text-center">Avaliações</th>
+                      <th className="px-4 py-3 text-center">Mensagens</th>
+                      <th className="px-5 py-3 text-right text-(--gold)">Total de pontos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeMembers.map((member, index) => (
+                      <tr key={member.member_id} className="border-t transition hover:bg-(--surface-muted)">
+                        <td className="border-t px-5 py-3">
+                          {index < 3 ? <RankBadge position={index + 1} /> : <span className="pl-2 text-(--muted)">{index + 1}</span>}
+                        </td>
+                        <td className="border-t px-4 py-3">
+                          <span className="flex items-center gap-3">
+                            <MemberInitial name={member.name} />
+                            <strong className="whitespace-nowrap">{member.name}</strong>
+                          </span>
+                        </td>
+                        <td className="border-t px-4 py-3 text-center">{member.content_count}</td>
+                        <td className="border-t px-4 py-3 text-center">{member.vote_count}</td>
+                        <td className="border-t px-4 py-3 text-center">{member.rating_count}</td>
+                        <td className="border-t px-4 py-3 text-center">{member.message_count}</td>
+                        <td className="border-t px-5 py-3 text-right text-base font-black text-(--gold)">{member.activity_score}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="px-5 pb-5">
+                <EmptyState title="Sem atividade" description="As contribuições dos membros aparecerão aqui." />
+              </div>
+            )}
           </section>
 
-          <section className="rounded-3xl border bg-(--surface) p-6 sm:p-7 lg:col-span-2">
+          <section className="app-panel p-5 sm:p-6">
             <div>
-              <p className="text-sm font-semibold text-(--accent-strong)">Top 3</p>
-              <h2 className="mt-1 text-2xl font-bold">Conteúdos mais discutidos</h2>
-              <p className="mt-2 text-sm text-(--muted)">
-                Mensagens publicadas e não removidas por membros ativos.
-              </p>
+              <h2 className="flex items-center gap-3 text-xl font-bold">
+                <span aria-hidden className="text-xl text-(--accent-strong)">◌</span>
+                Conteúdos mais discutidos
+              </h2>
+              <p className="mt-1 text-sm text-(--muted)">Conversas com maior participação dos membros ativos.</p>
             </div>
             {discussedContents.length ? (
-              <ol className="mt-6 grid gap-4 md:grid-cols-3">
+              <ol className="mt-5 grid gap-4 md:grid-cols-3">
                 {discussedContents.map((content, index) => (
                   <li key={content.content_id}>
                     <Link
                       href={`/app/groups/${groupId}/contents/${content.content_id}`}
-                      className="block h-full rounded-2xl border p-5 transition hover:border-(--accent)"
+                      className="group flex h-full items-center gap-4 rounded-xl border bg-(--surface) p-4 transition hover:border-(--accent)"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="text-2xl font-black text-(--muted)">
-                          {rankLabel(index)}
+                      <RankBadge position={index + 1} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold group-hover:text-(--accent-strong)">{content.title}</span>
+                        <span className="mt-1 block text-xs text-(--muted)">
+                          {CONTENT_TYPE_META[content.type].label} · {content.message_count} {content.message_count === 1 ? "mensagem" : "mensagens"}
                         </span>
-                        <span className="rounded-full bg-(--surface-muted) px-2.5 py-1 text-xs">
-                          {CONTENT_TYPE_META[content.type].label}
-                        </span>
-                      </div>
-                      <h3 className="mt-5 line-clamp-2 font-bold">{content.title}</h3>
-                      <p className="mt-2 text-sm text-(--muted)">
-                        {content.message_count}{" "}
-                        {content.message_count === 1 ? "mensagem" : "mensagens"}
-                      </p>
-                      <RankingBar value={content.message_count} maximum={maximumMessages} />
+                      </span>
                     </Link>
                   </li>
                 ))}
               </ol>
             ) : (
-              <div className="mt-6">
-                <EmptyState
-                  title="Nenhuma discussão"
-                  description="As conversas nos conteúdos aparecerão neste ranking."
-                />
+              <div className="mt-5">
+                <EmptyState title="Nenhuma discussão" description="As conversas nos conteúdos aparecerão neste ranking." />
               </div>
             )}
           </section>

@@ -57,36 +57,36 @@ export default async function GroupPage({
     .at(0)?.id;
 
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
+    <main id="main-content" className="mx-auto max-w-7xl px-5 py-8 sm:px-7 sm:py-10">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name }]} />
-      <section className="mt-6 rounded-3xl border bg-(--surface) p-7 sm:p-10">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+      <section className="mt-5">
+        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
           <div>
             <div className="mb-3 flex items-center gap-3">
-              <span className="rounded-full bg-(--surface-muted) px-3 py-1 text-xs text-(--muted)">{isOwner ? "Proprietário" : "Membro"}</span>
+              <span className="rounded-full border bg-(--accent-soft) px-3 py-1 text-xs text-(--accent-strong)">{isOwner ? "Proprietário" : "Membro"}</span>
               <span className="text-sm text-(--muted)">{count ?? 0} {(count ?? 0) === 1 ? "membro" : "membros"}</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{group.name}</h1>
-            <p className="mt-4 max-w-2xl leading-relaxed text-(--muted)">{group.description || "Este grupo ainda não possui descrição."}</p>
+            <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-(--muted)">{group.description || "Este grupo ainda não possui descrição."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/app/groups/${groupId}/contents/new`} className="cursor-pointer rounded-xl bg-(--accent) px-4 py-2.5 text-sm font-bold text-[#07150c] transition hover:brightness-90">Adicionar conteúdo</Link>
-            <Link href={`/app/groups/${groupId}/metrics`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Métricas</Link>
-            <Link href={`/app/groups/${groupId}/members`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Membros</Link>
-            <Link href={`/app/groups/${groupId}/activities`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Atividades</Link>
-            {isOwner && <Link href={`/app/groups/${groupId}/settings`} className="cursor-pointer rounded-xl border bg-(--surface-muted) px-4 py-2.5 text-sm font-semibold transition hover:brightness-90">Configurações</Link>}
+            <Link href={`/app/groups/${groupId}/metrics`} className="app-button-primary">Métricas</Link>
+            <Link href={`/app/groups/${groupId}/contents/new`} className="app-button-secondary">＋ Adicionar conteúdo</Link>
+            <Link href={`/app/groups/${groupId}/members`} className="app-button-secondary">Membros</Link>
+            <Link href={`/app/groups/${groupId}/activities`} className="app-button-secondary">Atividades</Link>
+            {isOwner && <Link href={`/app/groups/${groupId}/settings`} className="app-button-secondary">Configurações</Link>}
           </div>
         </div>
       </section>
 
-      <section aria-label="Filtrar conteúdos por tipo" className="mt-6">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <Link href={`/app/groups/${groupId}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${!activeType ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>Todos</Link>
+      <section aria-label="Filtrar conteúdos por tipo" className="mt-8 border-b">
+        <div className="flex gap-1 overflow-x-auto">
+          <Link href={`/app/groups/${groupId}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeType ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
           {CONTENT_TYPES.map((type) => {
             const params = new URLSearchParams();
             params.set("type", type);
             return (
-              <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-2 text-sm ${activeType === type ? "bg-(--accent) font-bold text-[#07150c]" : "bg-(--surface)"}`}>
+              <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeType === type ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>
                 <span aria-hidden>{CONTENT_TYPE_META[type].icon}</span> {CONTENT_TYPE_META[type].label}
               </Link>
             );
@@ -94,14 +94,14 @@ export default async function GroupPage({
         </div>
       </section>
 
-      <div className="mt-10 space-y-12">
+      <div className="mt-8 space-y-10">
         {sections.map((section) => {
           const items = filteredContents.filter((content) => content.status === section.status);
           return (
             <section key={section.status}>
-              <div className="mb-4 flex items-end justify-between gap-4">
-                <h2 className="text-2xl font-bold tracking-tight">{section.title}</h2>
-                <span className="text-sm text-(--muted)">{items.length}</span>
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <h2 className="text-xl font-bold tracking-tight">{section.title}</h2>
+                <span className="grid min-w-7 place-items-center rounded-full bg-(--surface-muted) px-2 py-1 text-xs text-(--muted)">{items.length}</span>
               </div>
               {items.length ? (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -120,7 +120,7 @@ export default async function GroupPage({
                   action={section.status !== "completed" ? (
                     <Link
                       href={`/app/groups/${groupId}/contents/new`}
-                      className="inline-block cursor-pointer rounded-xl bg-(--accent) px-5 py-3 text-sm font-bold text-[#07150c] transition hover:brightness-90"
+                      className="app-button-primary"
                     >
                       Adicionar conteúdo
                     </Link>

@@ -65,7 +65,7 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
 
     return (
       <div className="space-y-5">
-        <div className="rounded-xl bg-(--surface-muted) px-4 py-3">
+        <div className="rounded-xl border bg-(--surface-muted) px-4 py-3">
           <p className="text-sm text-(--muted)">Código enviado para</p>
           <p className="mt-1 truncate text-sm font-semibold">{requestState.email}</p>
         </div>
@@ -99,12 +99,12 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
             pattern="[0-9]*"
             placeholder="00000000"
             disabled={codeExpired}
-            className="w-full rounded-xl border bg-(--surface-muted) px-4 py-3 text-center text-xl font-bold tracking-[0.35em] placeholder:text-(--muted)"
+            className="app-input text-center text-xl font-bold tracking-[0.35em]"
           />
           <button
             type="submit"
             disabled={verifying || codeExpired}
-            className="w-full rounded-xl bg-(--accent) px-4 py-3 text-sm font-bold text-[#07150c] transition disabled:opacity-60"
+            className="app-button-primary w-full disabled:opacity-60"
           >
             {verifying ? "Verificando…" : "Entrar"}
           </button>
@@ -139,12 +139,12 @@ export function EmailCodeForm({ nextPath = "/dashboard" }: { nextPath?: string }
         required
         maxLength={254}
         placeholder="voce@exemplo.com"
-        className="w-full rounded-xl border bg-(--surface-muted) px-4 py-3 text-sm placeholder:text-(--muted)"
+        className="app-input text-sm"
       />
       <button
         type="submit"
         disabled={requesting}
-        className="w-full rounded-xl bg-(--accent) px-4 py-3 text-sm font-bold text-[#07150c] transition disabled:opacity-60"
+        className="app-button-primary w-full disabled:opacity-60"
       >
         {requesting ? "Enviando…" : "Receber código por e-mail"}
       </button>

@@ -33,7 +33,7 @@ export function ContentRatingForm({
       submitLabel={currentRating ? "Atualizar avaliação" : "Enviar avaliação"}
       pendingLabel="Salvando…"
       className="space-y-4"
-      buttonClassName="rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] disabled:opacity-60"
+      buttonClassName="app-button-primary disabled:opacity-60"
     >
       <input type="hidden" name="groupId" value={groupId} />
       <input type="hidden" name="contentId" value={contentId} />
@@ -76,7 +76,7 @@ export function ContentRatingForm({
           rows={3}
           defaultValue={currentComment ?? ""}
           placeholder="Conte brevemente o que achou…"
-          className="mt-2 w-full resize-y rounded-xl border bg-(--surface-muted) px-4 py-3"
+          className="app-input mt-2 resize-y"
         />
         <p className="mt-1 text-xs text-(--muted)">Até 500 caracteres.</p>
       </div>

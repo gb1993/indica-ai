@@ -34,9 +34,10 @@ export default async function InvitationPage({
   const invitation = ((data ?? []) as InvitationPreview[])[0];
 
   return (
-    <main className="grid min-h-screen place-items-center px-5 py-12">
-      <section className="w-full max-w-lg rounded-3xl border bg-(--surface) p-8 text-center shadow-2xl shadow-black/15">
-        <div className="mx-auto mb-5 grid size-12 place-items-center rounded-2xl bg-(--accent) text-xl font-black text-[#07150c]">AÍ</div>
+    <main className="relative grid min-h-screen place-items-center overflow-hidden px-5 py-12">
+      <span aria-hidden className="absolute size-[30rem] rounded-full bg-violet-600/10 blur-3xl" />
+      <section className="app-auth-panel relative w-full max-w-lg p-8 text-center">
+        <div className="mx-auto mb-5 grid size-12 place-items-center rounded-xl bg-[linear-gradient(145deg,#f7c94b,#8b5cf6)] text-lg font-black text-white">AÍ</div>
         {invitation ? (
           <>
             <p className="text-sm font-semibold text-(--accent-strong)">Convite para grupo</p>
@@ -47,7 +48,7 @@ export default async function InvitationPage({
               submitLabel="Aceitar e entrar no grupo"
               pendingLabel="Aceitando…"
               className="mt-7 space-y-3"
-              buttonClassName="w-full rounded-xl bg-(--accent) px-5 py-3 font-bold text-[#07150c] transition disabled:opacity-60"
+              buttonClassName="app-button-primary w-full disabled:opacity-60"
             >
               <input type="hidden" name="token" value={token} />
             </ActionForm>
@@ -56,7 +57,7 @@ export default async function InvitationPage({
           <>
             <h1 className="text-2xl font-bold">Convite indisponível</h1>
             <p className="mt-3 text-(--muted)">O convite expirou, foi cancelado, já foi usado ou pertence a outro e-mail.</p>
-            <Link href="/dashboard" className="mt-7 inline-block cursor-pointer rounded-xl border px-5 py-3 text-sm font-semibold transition hover:brightness-90">Ir para meus grupos</Link>
+            <Link href="/dashboard" className="app-button-secondary mt-7">Ir para meus grupos</Link>
           </>
         )}
       </section>

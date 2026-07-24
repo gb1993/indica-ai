@@ -1,55 +1,24 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
 import { getPublicEnv } from "@/lib/env";
 import type { ActionState } from "@/lib/action-state";
 import { createResendClient } from "@/lib/resend";
 import { createClient } from "@/lib/supabase/server";
-
-const uuidSchema = z.uuid();
-const groupSchema = z.object({
-  name: z.string().trim().min(2, "O nome deve ter pelo menos 2 caracteres.").max(80),
-  description: z.string().trim().max(500, "A descrição deve ter no máximo 500 caracteres."),
-});
-const invitationSchema = z.object({
-  groupId: uuidSchema,
-  email: z.email("Informe um e-mail válido.").max(254).transform((value) => value.toLowerCase()),
-});
-
-function formString(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : "";
-}
-
-function actionError(message: string, error?: z.ZodError): ActionState {
-  return {
-    status: "error",
-    message,
-    fieldErrors: error ? z.flattenError(error).fieldErrors : undefined,
-  };
-}
-
-function escapeHtml(value: string) {
-  return value.replace(/[&<>'"]/g, (character) => {
-    const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "'": "&#39;",
-      '"': "&quot;",
-    };
-    return entities[character];
-  });
-}
-
-function invitationHash(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
+import {
+  actionError,
+  escapeHtml,
+  formString,
+  groupSchema,
+  invitationHash,
+  invitationSchema,
+  invitationTokenSchema,
+  uuidSchema,
+} from "@/lib/validation";
 
 async function createAndSendInvitation(groupId: string, email: string) {
   const supabase = await createClient();
@@ -88,7 +57,7 @@ async function createAndSendInvitation(groupId: string, email: string) {
           <p>Você recebeu um convite para participar do grupo <strong>${safeGroupName}</strong>.</p>
           <p>Este convite expira em 5 minutos e pode ser usado somente uma vez.</p>
           <p style="margin:28px 0">
-            <a href="${inviteUrl}" style="background:#3ddc84;color:#07150c;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700">
+            <a href="${inviteUrl}" style="background:#7c3aed;color:#ffffff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700">
               Aceitar convite
             </a>
           </p>
@@ -267,7 +236,7 @@ export async function acceptInvitation(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const token = z.string().min(32).max(256).safeParse(formString(formData, "token"));
+  const token = invitationTokenSchema.safeParse(formString(formData, "token"));
   if (!token.success) return actionError("Convite inválido.");
 
   const supabase = await createClient();

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
@@ -66,30 +67,47 @@ export default async function GroupMembersPage({
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+    <main id="main-content" className="app-page max-w-5xl">
       <Breadcrumbs items={[{ label: "Grupos", href: "/dashboard" }, { label: group.name, href: `/app/groups/${groupId}` }, { label: "Membros" }]} />
-      <div className="mt-6">
+      <header className="mt-5">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-(--accent-strong)">Comunidade</p>
         <h1 className="text-3xl font-bold tracking-tight">Membros</h1>
-        <p className="mt-2 text-(--muted)">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"}</p>
-      </div>
+        <p className="mt-2 text-sm text-(--muted)">{members.length} {members.length === 1 ? "pessoa ativa" : "pessoas ativas"} em {group.name}</p>
+      </header>
       {isOwner && (
-        <section className="mb-6 mt-8 rounded-2xl border bg-(--surface) p-6">
+        <section className="app-panel mb-6 mt-7 p-6">
           <h2 className="font-bold">Convidar por e-mail</h2>
           <p className="mt-1 text-sm text-(--muted)">O link será válido por 5 minutos e somente para o e-mail informado.</p>
           <InvitationForm groupId={groupId} />
         </section>
       )}
 
-      <section className="overflow-hidden rounded-2xl border bg-(--surface)">
+      <section className="app-panel overflow-hidden">
         <ul className="divide-y">
           {members.map((member) => (
             <li key={member.id} className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="truncate font-semibold">{member.user?.name ?? "Usuário"}</p>
-                  <span className="rounded-full bg-(--surface-muted) px-2 py-0.5 text-xs text-(--muted)">{member.role === "owner" ? "Proprietário" : "Membro"}</span>
+              <div className="flex min-w-0 items-center gap-3">
+                {member.user?.avatar_url ? (
+                  <Image
+                    src={member.user.avatar_url}
+                    alt={`Foto de ${member.user.name}`}
+                    width={42}
+                    height={42}
+                    className="size-10.5 shrink-0 rounded-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="grid size-10.5 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#6d28d9,#c084fc)] text-sm font-bold text-white">
+                    {(member.user?.name ?? "U").trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-semibold">{member.user?.name ?? "Usuário"}</p>
+                    <span className="rounded-full bg-(--surface-muted) px-2 py-0.5 text-xs text-(--muted)">{member.role === "owner" ? "Proprietário" : "Membro"}</span>
+                  </div>
+                  <p className="truncate text-sm text-(--muted)">{member.user?.email}</p>
                 </div>
-                <p className="truncate text-sm text-(--muted)">{member.user?.email}</p>
               </div>
               {isOwner && member.role !== "owner" && (
                 <ActionForm
@@ -112,7 +130,7 @@ export default async function GroupMembersPage({
         <section className="mt-8">
           <h2 className="text-xl font-bold">Convites recentes</h2>
           {invitations.length ? (
-            <div className="mt-4 overflow-hidden rounded-2xl border bg-(--surface)">
+            <div className="app-panel mt-4 overflow-hidden">
               <ul className="divide-y">
                 {invitations.map((invitation) => {
                   const status = invitationStatus(invitation);

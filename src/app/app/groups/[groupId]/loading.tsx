@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/skeleton";
 
 export default function GroupLoading() {
   return (
-    <main id="main-content" className="mx-auto max-w-6xl px-5 py-10 sm:py-12" aria-label="Carregando grupo">
+    <main id="main-content" className="app-page" aria-label="Carregando grupo">
       <Skeleton className="h-5 w-52" />
       <Skeleton className="mt-6 h-52" />
       <Skeleton className="mt-6 h-12" />

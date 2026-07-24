@@ -5,7 +5,7 @@ Aplicação privada para grupos de amigos indicarem, votarem, avaliarem e conver
 ## Tecnologias
 
 - Next.js 16 com App Router, React 19 e TypeScript estrito
-- Supabase Auth e PostgreSQL com Row Level Security
+- Supabase Auth, PostgreSQL com Row Level Security e Storage para avatares
 - Resend para convites de grupo
 - Tailwind CSS
 - Vercel para produção
@@ -116,11 +116,11 @@ O e-mail local usa `supabase/templates/magic_link.html`, mas contém apenas `{{ 
 
 ### Stack opcional mais enxuta
 
-O projeto não usa Analytics, Vector, Realtime, Storage ou Edge Functions atualmente. Para iniciar somente os serviços necessários ao app e ao login por OTP:
+O projeto não usa Analytics, Vector, Realtime ou Edge Functions atualmente. O Storage deve permanecer ativo para upload e entrega dos avatares; o Imgproxy é opcional porque a imagem já é recortada e convertida para WebP no navegador. Para iniciar uma stack mais enxuta:
 
 ```powershell
 npx.cmd supabase stop
-npx.cmd supabase start -x analytics,vector,realtime,storage,edge-runtime,functions,studio,meta,imgproxy
+npx.cmd supabase start -x analytics,vector,realtime,edge-runtime,functions,studio,meta,imgproxy
 ```
 
 Nesse modo, Supabase Studio não estará disponível, mas banco, Auth, API REST e Mailpit continuarão funcionando.
@@ -199,13 +199,15 @@ Revise a migration pendente antes de executar `db push`. Migrations já aplicada
 
 ```bash
 npm run test:unit
+npm run test:coverage
 npm run test:db
+npm run test:all
 npm run lint
 npm run typecheck
 npm run build
 ```
 
-`test:db` inicia sobre a stack local do Supabase e exige Docker Desktop ativo. As suítes pgTAP cobrem RLS, grupos, convites de uso único, autoria, conteúdo opcional e inválido, votação/maioria, conclusão, avaliações, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e votação quando requisições concorrentes chegam ao banco.
+`test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo e upload de avatar, falhando se linhas, funções ou branches ficarem abaixo de 70%. `test:all` combina essa verificação com os testes de banco. O `test:db` exige a stack local do Supabase e o Docker Desktop ativo. As suítes pgTAP cobrem RLS, Storage de avatares, grupos, convites de uso único, autoria, conteúdo opcional e inválido, votação/maioria, conclusão, avaliações, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e votação quando requisições concorrentes chegam ao banco.
 
 ## Publicação na Vercel
 
@@ -214,7 +216,7 @@ npm run build
 3. Vincule `indicai.gbdev.pro` em **Settings → Domains** e aplique no DNS o CNAME indicado pela Vercel.
 4. Confirme que `NEXT_PUBLIC_APP_URL` usa exatamente `https://indicai.gbdev.pro`, sem `/` final.
 5. Aplique as migrations remotas com `npx supabase db push`.
-6. Faça o deploy e teste login, criação de grupo, convite, voto, conclusão, avaliação e mensagem com pelo menos dois usuários reais.
+6. Faça o deploy e teste login, avatar, criação de grupo, convite, voto, conclusão, avaliação e mensagem com pelo menos dois usuários reais.
 
 Cabeçalhos de proteção contra framing, MIME sniffing e permissões desnecessárias são enviados por todas as rotas. HSTS é habilitado somente no build de produção.
 
