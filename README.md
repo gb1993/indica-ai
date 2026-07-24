@@ -181,6 +181,14 @@ No Resend:
 
 Convites expiram em cinco minutos, são vinculados ao e-mail destinatário e só podem ser aceitos uma vez. Apenas o SHA-256 do token fica no banco. Reenviar um convite cancela o token anterior.
 
+O e-mail de convite é definido em `src/emails/group-invitation.tsx`, com versão HTML responsiva e alternativa em texto puro. Para visualizar o template localmente:
+
+```bash
+npm run email:dev
+```
+
+O envio usa uma chave de idempotência baseada no ID do convite e tags para facilitar a busca no painel do Resend. O banco registra `pending`, `sent` ou `failed`, além do ID retornado pelo provedor. Neste fluxo, `sent` significa que a API do Resend aceitou o envio; não confirma entrega na caixa postal. O projeto não recebe webhooks do Resend e continua sem `SUPABASE_SERVICE_ROLE_KEY`.
+
 ## Banco, RLS e migrations
 
 As migrations ficam em `supabase/migrations`. Todas as tabelas públicas têm RLS habilitada. Funções `security definer` usam `search_path = ''`, validam `auth.uid()` e possuem `EXECUTE` concedido somente a `authenticated` quando fazem parte da API do app. Funções internas de trigger não são RPCs públicas.
@@ -207,7 +215,7 @@ npm run typecheck
 npm run build
 ```
 
-`test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo e upload de avatar, falhando se linhas, funções ou branches ficarem abaixo de 70%. `test:all` combina essa verificação com os testes de banco. O `test:db` exige a stack local do Supabase e o Docker Desktop ativo. As suítes pgTAP cobrem RLS, Storage de avatares, grupos, convites de uso único, autoria, conteúdo opcional e inválido, votação/maioria, conclusão, avaliações, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e votação quando requisições concorrentes chegam ao banco.
+`test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo, upload de avatar e conteúdo textual dos convites, falhando se linhas, funções ou branches ficarem abaixo de 70%. `test:all` combina essa verificação com os testes de banco. O `test:db` exige a stack local do Supabase e o Docker Desktop ativo. As suítes pgTAP cobrem RLS, Storage de avatares, grupos, convites de uso único, rastreamento do envio de convites, autoria, conteúdo opcional e inválido, votação/maioria, conclusão, avaliações, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e votação quando requisições concorrentes chegam ao banco.
 
 ## CI no GitHub e deploy pelo Supabase
 

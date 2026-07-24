@@ -14,6 +14,7 @@ export type ContentCardData = {
   thumbnail_url: string | null;
   status: ContentStatus;
   completed_at: string | null;
+  creator: { name: string } | null;
   average_rating: number | null;
   rating_count: number;
 };
@@ -34,6 +35,9 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
           <ContentStatusBadge status={content.status} />
         </div>
         <h3 className="mt-3 line-clamp-2 font-bold tracking-tight group-hover:text-(--accent-strong)">{content.title}</h3>
+        <p className="mt-2 text-xs text-(--muted)">
+          Indicado por <span className="font-semibold text-(--foreground)">{content.creator?.name ?? "Membro"}</span>
+        </p>
         {content.status === "completed" ? (
           <dl className="mt-3 space-y-1.5 border-t pt-3 text-xs text-(--muted)">
             <div className="flex justify-between gap-3">

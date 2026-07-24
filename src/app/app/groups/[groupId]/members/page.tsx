@@ -29,12 +29,15 @@ type Invitation = {
   accepted_at: string | null;
   cancelled_at: string | null;
   created_at: string;
+  email_status: "pending" | "sent" | "failed";
 };
 
 function invitationStatus(invitation: Invitation) {
   if (invitation.accepted_at) return "Aceito";
   if (invitation.cancelled_at) return "Cancelado";
   if (new Date(invitation.expires_at).getTime() <= Date.now()) return "Expirado";
+  if (invitation.email_status === "sent") return "Enviado";
+  if (invitation.email_status === "failed") return "Falha no envio";
   return "Pendente";
 }
 
@@ -59,7 +62,7 @@ export default async function GroupMembersPage({
   if (isOwner) {
     const { data } = await supabase
       .from("group_invitations")
-      .select("id, email, expires_at, accepted_at, cancelled_at, created_at")
+      .select("id, email, expires_at, accepted_at, cancelled_at, created_at, email_status")
       .eq("group_id", groupId)
       .order("created_at", { ascending: false })
       .limit(20);
@@ -134,7 +137,11 @@ export default async function GroupMembersPage({
               <ul className="divide-y">
                 {invitations.map((invitation) => {
                   const status = invitationStatus(invitation);
-                  const canManage = status === "Pendente" || status === "Expirado";
+                  const canManage =
+                    status === "Pendente" ||
+                    status === "Enviado" ||
+                    status === "Falha no envio" ||
+                    status === "Expirado";
                   return (
                     <li key={invitation.id} className="flex flex-col justify-between gap-3 p-5 sm:flex-row sm:items-center">
                       <div className="min-w-0">
@@ -152,7 +159,7 @@ export default async function GroupMembersPage({
                             <input type="hidden" name="groupId" value={groupId} />
                             <input type="hidden" name="invitationId" value={invitation.id} />
                           </ActionForm>
-                          {status === "Pendente" && (
+                          {(status === "Pendente" || status === "Enviado") && (
                             <ActionForm
                               action={cancelInvitation}
                               submitLabel="Cancelar"

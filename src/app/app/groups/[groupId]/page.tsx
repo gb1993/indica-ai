@@ -14,10 +14,25 @@ type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count"> & {
   ratings: Array<{ rating: number }>;
 };
 
-const sections: Array<{ status: ContentStatus; title: string; empty: string }> = [
-  { status: "pending", title: "Aguardando aprovação", empty: "Nenhum conteúdo aguardando aprovação." },
-  { status: "approved", title: "Próximos conteúdos", empty: "Nenhum conteúdo para ver..." },
-  { status: "completed", title: "Conteúdos concluídos", empty: "Nenhum conteúdo concluído por enquanto." },
+const sections: Array<{ status: ContentStatus; title: string; subtitle: string; empty: string }> = [
+  {
+    status: "pending",
+    title: "Indicado pelo grupo",
+    subtitle: "Vote nas indicações. A maioria dos membros ativos precisa aprovar para o conteúdo avançar.",
+    empty: "Nenhum conteúdo aguardando aprovação.",
+  },
+  {
+    status: "approved",
+    title: "Próximos conteúdos",
+    subtitle: "Assista, leia ou acompanhe os conteúdos aprovados e marque cada um como concluído ao finalizar.",
+    empty: "Nenhum conteúdo para ver...",
+  },
+  {
+    status: "completed",
+    title: "Conteúdos concluídos",
+    subtitle: "Avalie o que o grupo já concluiu e compartilhe sua opinião com os demais membros.",
+    empty: "Nenhum conteúdo concluído por enquanto.",
+  },
 ];
 
 export default async function GroupPage({
@@ -36,7 +51,7 @@ export default async function GroupPage({
     supabase.from("groups").select("id, name, description").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
     supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "active"),
-    supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
+    supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, creator:profiles!contents_created_by_fkey(name), ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
   ]);
   if (!group || !membership) notFound();
   const isOwner = membership.role === "owner";
@@ -99,8 +114,11 @@ export default async function GroupPage({
           const items = filteredContents.filter((content) => content.status === section.status);
           return (
             <section key={section.status}>
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="text-xl font-bold tracking-tight">{section.title}</h2>
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">{section.title}</h2>
+                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-(--muted)">{section.subtitle}</p>
+                </div>
                 <span className="grid min-w-7 place-items-center rounded-full bg-(--surface-muted) px-2 py-1 text-xs text-(--muted)">{items.length}</span>
               </div>
               {items.length ? (
