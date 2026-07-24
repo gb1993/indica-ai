@@ -29,7 +29,7 @@ values
   ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'bruno@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Bruno"}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'carla@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Carla"}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'diego@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Diego"}', now(), now(), '', '', '', '', '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'gbdev1993@gmail.com', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Gabriel"}', now(), now(), '', '', '', '', '', '', '', '');
+  ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'dev@example.test', '', now(), now(), '{"provider":"email","providers":["email"]}', '{"name":"Gabriel"}', now(), now(), '', '', '', '', '', '', '', '');
 
 insert into public.groups (id, name, description, owner_id)
 values
