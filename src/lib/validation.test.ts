@@ -16,6 +16,7 @@ import {
   isSafeHttpsUrl,
   newMessageSchema,
   parseContentForm,
+  profileNameSchema,
   ratingSchema,
   requestCodeSchema,
   safeNextPath,
@@ -67,6 +68,16 @@ test("valida dados de grupo, convite e token", () => {
   assert.equal(invitationSchema.safeParse({ groupId, email: "x" }).success, false);
   assert.equal(invitationTokenSchema.safeParse("a".repeat(32)).success, true);
   assert.equal(invitationTokenSchema.safeParse("curto").success, false);
+});
+
+test("normaliza e valida o nome do perfil", () => {
+  assert.equal(
+    profileNameSchema.parse({ name: "  Gabriel   Branco  " }).name,
+    "Gabriel Branco",
+  );
+  assert.equal(profileNameSchema.safeParse({ name: "G" }).success, false);
+  assert.equal(profileNameSchema.safeParse({ name: "x".repeat(81) }).success, false);
+  assert.equal(profileNameSchema.safeParse({ name: "<b>Gabriel</b>" }).success, false);
 });
 
 test("extrai strings do FormData e produz erros de campo", () => {
@@ -136,8 +147,9 @@ test("rejeita conteúdo inseguro ou incompatível", () => {
   assert.equal(contentSchema.safeParse({ ...base, description: "<script>" }).success, false);
   assert.equal(contentSchema.safeParse({ ...base, thumbnailUrl: "http://example.com/a.jpg" }).success, false);
   assert.equal(contentSchema.safeParse({ ...base, trailerUrl: "https://example.com/video" }).success, false);
-  assert.equal(contentSchema.safeParse({ ...base, type: "book", trailerUrl: `https://youtu.be/${youtubeId}` }).success, false);
-  assert.equal(contentSchema.safeParse({ ...base, type: "book" }).success, true);
+  assert.equal(contentSchema.safeParse({ ...base, type: "documentary", trailerUrl: `https://youtu.be/${youtubeId}` }).success, true);
+  assert.equal(contentSchema.safeParse({ ...base, type: "series" }).success, true);
+  assert.equal(contentSchema.safeParse({ ...base, type: "book" }).success, false);
   assert.equal(contentSchema.safeParse({ ...base, type: "game" }).success, false);
 });
 

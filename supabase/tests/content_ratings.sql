@@ -21,9 +21,9 @@ values
 
 insert into public.contents (id, group_id, created_by, type, title, status)
 values
-  ('53000000-0000-0000-0000-000000000001', '51000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'book', 'Conteúdo pendente', 'pending'),
-  ('53000000-0000-0000-0000-000000000002', '51000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'book', 'Conteúdo aprovado', 'approved'),
-  ('53000000-0000-0000-0000-000000000003', '51000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'book', 'Outro conteúdo aprovado', 'approved');
+  ('53000000-0000-0000-0000-000000000001', '51000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'movie', 'Conteúdo pendente', 'pending'),
+  ('53000000-0000-0000-0000-000000000002', '51000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'series', 'Conteúdo aprovado', 'approved'),
+  ('53000000-0000-0000-0000-000000000003', '51000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'documentary', 'Outro conteúdo aprovado', 'approved');
 
 select set_config('request.jwt.claim.sub', '50000000-0000-0000-0000-000000000001', true);
 select throws_ok(
@@ -77,7 +77,7 @@ select throws_ok(
   'nota decimal é rejeitada'
 );
 select lives_ok(
-  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 4, 'Uma ótima leitura para o grupo.')$$,
+  $$select public.set_content_rating('53000000-0000-0000-0000-000000000002', 4, 'Uma ótima indicação para o grupo.')$$,
   'membro ativo avalia conteúdo concluído com comentário'
 );
 select is(

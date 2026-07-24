@@ -55,10 +55,10 @@ select throws_ok(
 );
 select throws_ok(
   $$insert into public.contents (group_id, created_by, type, title, trailer_url)
-    values ('72000000-0000-0000-0000-000000000001', '71000000-0000-0000-0000-000000000001', 'book', 'Livro com trailer', 'dQw4w9WgXcQ')$$,
+    values ('72000000-0000-0000-0000-000000000001', '71000000-0000-0000-0000-000000000001', 'movie', 'Trailer inválido', 'curto')$$,
   '23514',
   null,
-  'livro não aceita trailer'
+  'trailer precisa ter um id normalizado do YouTube'
 );
 select throws_ok(
   $$insert into public.contents (group_id, created_by, type, title, description)

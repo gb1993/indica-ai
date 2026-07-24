@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AvatarForm } from "@/components/avatar-form";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { ProfileNameForm } from "@/components/profile-name-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Perfil" };
@@ -39,16 +40,16 @@ export default async function ProfilePage() {
 
       <section className="app-panel mt-5 p-6 sm:p-8">
         <h2 className="font-bold">Dados da conta</h2>
-        <dl className="mt-5 grid gap-5 sm:grid-cols-2">
+        <div className="mt-5 grid gap-6 sm:grid-cols-2">
+          <ProfileNameForm initialName={profile.name} />
           <div>
-            <dt className="text-xs uppercase tracking-wide text-(--muted)">Nome</dt>
-            <dd className="mt-1 font-medium">{profile.name}</dd>
+            <p className="text-sm font-medium">E-mail</p>
+            <p className="mt-2 break-all font-medium">{profile.email}</p>
+            <p className="mt-1.5 text-xs text-(--muted)">
+              O e-mail é gerenciado pela sua conta de acesso.
+            </p>
           </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-(--muted)">E-mail</dt>
-            <dd className="mt-1 break-all font-medium">{profile.email}</dd>
-          </div>
-        </dl>
+        </div>
       </section>
     </main>
   );

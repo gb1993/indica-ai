@@ -43,6 +43,15 @@ export const groupSchema = z.object({
   description: z.string().trim().max(500, "A descrição deve ter no máximo 500 caracteres."),
 });
 
+export const profileNameSchema = z.object({
+  name: z.string()
+    .transform((value) => value.replace(/\s+/g, " ").trim())
+    .pipe(z.string()
+      .min(2, "O nome deve ter pelo menos 2 caracteres.")
+      .max(80, "O nome deve ter no máximo 80 caracteres."))
+    .refine((value) => !/[<>]/.test(value), "O nome deve conter somente texto, sem HTML."),
+});
+
 export const invitationSchema = z.object({
   groupId: uuidSchema,
   email: z.email("Informe um e-mail válido.").max(254).transform((value) => value.toLowerCase()),
@@ -140,17 +149,6 @@ export const contentSchema = z.object({
   ),
   trailerUrl: z.string().trim().max(2048),
 }).superRefine((value, context) => {
-  if (value.type === "book") {
-    if (value.trailerUrl) {
-      context.addIssue({
-        code: "custom",
-        path: ["trailerUrl"],
-        message: "Livros não possuem trailer.",
-      });
-    }
-    return;
-  }
-
   if (value.trailerUrl && !normalizeYouTubeVideoId(value.trailerUrl)) {
     context.addIssue({
       code: "custom",
@@ -158,6 +156,19 @@ export const contentSchema = z.object({
       message: "Informe um link HTTPS válido do YouTube.",
     });
   }
+});
+
+export const tmdbSearchSchema = z.object({
+  groupId: uuidSchema,
+  query: z.string()
+    .transform((value) => value.replace(/\s+/g, " ").trim())
+    .pipe(z.string().min(2, "Digite pelo menos 2 caracteres.").max(80)),
+});
+
+export const tmdbSelectionSchema = z.object({
+  groupId: uuidSchema,
+  tmdbId: z.coerce.number().int().positive(),
+  tmdbMediaType: z.enum(["movie", "tv"]),
 });
 
 export function parseContentForm(formData: FormData) {

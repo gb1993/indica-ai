@@ -1,11 +1,12 @@
 # Indica Aí
 
-Aplicação privada para grupos de amigos indicarem, votarem, avaliarem e conversarem sobre filmes, séries, animes, documentários e livros.
+Aplicação privada para grupos de amigos indicarem, votarem, avaliarem e conversarem sobre filmes, séries e documentários.
 
 ## Tecnologias
 
 - Next.js 16 com App Router, React 19 e TypeScript estrito
 - Supabase Auth, PostgreSQL com Row Level Security e Storage para avatares
+- TMDB para busca e preenchimento automático dos conteúdos audiovisuais
 - Resend para convites de grupo
 - Tailwind CSS
 - Vercel para produção
@@ -18,11 +19,12 @@ Para usar o Supabase hospedado ou configurar produção, copie `.env.example` pa
 NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 NEXT_PUBLIC_APP_URL=https://indicai.gbdev.pro
+TMDB_API_KEY=...
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=acesso@mail.gbdev.pro
 ```
 
-`NEXT_PUBLIC_*` é incorporada ao bundle do navegador e deve conter somente valores públicos. A publishable key do Supabase foi feita para esse uso e a autorização real é aplicada por RLS. `RESEND_API_KEY` é segredo de servidor e nunca pode receber o prefixo `NEXT_PUBLIC_`.
+`NEXT_PUBLIC_*` é incorporada ao bundle do navegador e deve conter somente valores públicos. A publishable key do Supabase foi feita para esse uso e a autorização real é aplicada por RLS. `TMDB_API_KEY` e `RESEND_API_KEY` são segredos de servidor e nunca podem receber o prefixo `NEXT_PUBLIC_`.
 
 O app não usa `SUPABASE_SERVICE_ROLE_KEY`: nenhuma operação normal precisa ignorar RLS. Se ela for necessária em uma futura rotina administrativa, mantenha-a exclusivamente no servidor e em um módulo separado.
 
@@ -75,11 +77,12 @@ Crie `.env.development.local` na raiz do projeto:
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=COLE_A_PUBLISHABLE_KEY_EXIBIDA_PELO_SUPABASE
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+TMDB_API_KEY=COLE_SUA_CHAVE_V3_DO_TMDB
 ```
 
 Use o valor `PUBLISHABLE_KEY` mostrado por `supabase start` ou `supabase status`. O arquivo `.env.development.local` é ignorado pelo Git e sobrescreve as variáveis públicas de `.env.local` somente durante `next dev`, preservando uma eventual configuração remota.
 
-`RESEND_API_KEY` e `RESEND_FROM_EMAIL` não são necessários para login local. Eles são exigidos apenas para testar o envio real de convites de grupo pela API do Resend.
+`TMDB_API_KEY` é necessária para pesquisar e cadastrar conteúdos pelo TMDB. `RESEND_API_KEY` e `RESEND_FROM_EMAIL` não são necessários para login local; eles são exigidos apenas para testar o envio real de convites de grupo pela API do Resend.
 
 ### 4. Aplique migrations e seed
 
@@ -170,6 +173,16 @@ O Supabase deve usar um SMTP de produção. O SMTP configurado no painel do Supa
 
 As respostas do formulário de solicitação são genéricas para não confirmar se um e-mail já possui conta. Solicitar o código cria somente um registro pendente no Supabase Auth; o perfil da aplicação é criado pelo trigger apenas depois que o código é validado e o primeiro login gera uma sessão. A sessão SSR fica somente em cookies `HttpOnly`, `SameSite=Lax` e `Secure` em produção; tokens de autenticação não são gravados em `localStorage` ou `sessionStorage`.
 
+## TMDB e cadastro de conteúdos
+
+O TMDB não oferece GraphQL oficial. A integração usa a API REST v3 exclusivamente no servidor, com a chave armazenada em `TMDB_API_KEY`. A chave nunca é enviada ao navegador.
+
+No cadastro, o membro pesquisa filmes e séries em português. Resultados classificados pelo TMDB com o gênero `Documentary` são apresentados como documentários, inclusive séries documentais. Ao selecionar um resultado, o app consulta os detalhes e preenche título, descrição, capa, tipo e trailer automaticamente. O servidor repete essa consulta antes de gravar, evitando confiar em campos manipuláveis pelo cliente.
+
+Os campos manuais aparecem somente quando a busca não encontra o conteúdo, o membro informa que nenhum resultado corresponde ao desejado ou a API está indisponível. Conteúdos manuais continuam aceitos.
+
+Conteúdos vindos do TMDB armazenam `tmdb_id` e `tmdb_media_type`. A combinação é única dentro de cada grupo, impede indicações duplicadas e permite localizar ou remover futuramente uma indicação externa sem afetar outros grupos.
+
 ## Resend e domínio
 
 No Resend:
@@ -258,7 +271,7 @@ Cabeçalhos de proteção contra framing, MIME sniffing e permissões desnecess�
 - Site URL e OTP de 300 segundos corretos no Supabase
 - SMTP do Supabase entregando códigos de login
 - Domínio do Resend verificado e convites entregando
-- Variáveis de produção cadastradas sem `service_role`
+- Variáveis de produção, incluindo `TMDB_API_KEY`, cadastradas sem `service_role`
 - `supabase db lint`, testes, lint, typecheck e build concluídos
 - RLS validada com usuário membro e não membro
 - Logs da Vercel, Supabase Auth e Resend sem falhas recorrentes
