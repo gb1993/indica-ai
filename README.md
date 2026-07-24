@@ -89,7 +89,7 @@ npx.cmd supabase db reset
 
 O reset recria o banco, aplica todas as migrations e executa `supabase/seed.sql`. Ele também invalida sessões locais anteriores.
 
-O seed inclui o usuário `gbdev1993@gmail.com`, grupos, membros, conteúdos, votos, avaliações, mensagens, atividades e métricas. O seed contém somente dados de desenvolvimento, nunca é executado por `supabase db push` e não deve ser rodado manualmente no projeto remoto.
+O seed inclui o usuário fictício `dev@example.test`, grupos, membros, conteúdos, votos, avaliações, mensagens, atividades e métricas. O seed contém somente dados de desenvolvimento, nunca é executado por `supabase db push` e não deve ser rodado manualmente no projeto remoto.
 
 ### 5. Inicie o Next.js
 
@@ -107,7 +107,7 @@ Acesse:
 ### 6. Entre com o usuário seedado
 
 1. Abra http://localhost:3000.
-2. Informe `gbdev1993@gmail.com`.
+2. Informe `dev@example.test`.
 3. Abra o Mailpit em http://127.0.0.1:54324.
 4. Copie o código numérico de seis dígitos.
 5. Volte à aplicação e confirme o código.
@@ -222,7 +222,16 @@ Depois do merge, a integração oficial **Supabase → GitHub**, com **Deploy to
 
 Como o Supabase Branching não está habilitado, o PR não cria um banco remoto de preview. A validação usa a stack Supabase descartável do runner, incluindo migrations, seed, RLS, pgTAP e database lint.
 
-Proteja a branch `main`, impeça pushes diretos e exija os checks **Application checks** e **Database migrations, RLS and pgTAP** antes do merge. A Vercel pode continuar fazendo o deploy da aplicação a partir da `main`; o GitHub Actions valida o código e o Supabase Integration publica as migrations.
+Proteja a branch `main` com um Ruleset ativo e sem bypass:
+
+- Exija pull request antes do merge, com `0` aprovações enquanto houver apenas um mantenedor.
+- Exija resolução de todas as conversas.
+- Exija os checks **Application checks** e **Database migrations, RLS and pgTAP**.
+- Exija que a branch do PR esteja atualizada com a `main`.
+- Bloqueie force push e exclusão da `main`.
+- Use somente **Squash** como método de merge.
+
+A Vercel pode continuar fazendo o deploy da aplicação a partir da `main`; o GitHub Actions valida o código e o Supabase Integration publica as migrations.
 
 ## Publicação na Vercel
 
