@@ -1,5 +1,7 @@
 "use client";
 
+import { AppIcon } from "@/components/app-icon";
+
 type Theme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "indica-ai-theme";
@@ -26,8 +28,8 @@ export function ThemeToggle({ showLabel = false }: { showLabel?: boolean }) {
     >
       {showLabel ? <span className="font-medium">Tema</span> : null}
       <span className="flex items-center gap-2">
-        <span aria-hidden="true" className="text-lg dark:hidden">☾</span>
-        <span aria-hidden="true" className="hidden text-lg dark:inline">☀</span>
+        <AppIcon name="moon" className="size-4.5 dark:hidden" />
+        <AppIcon name="sun" className="hidden size-4.5 dark:block" />
         {showLabel ? (
           <span aria-hidden className="relative h-5 w-9 rounded-full bg-(--border)">
             <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-(--muted) transition-all dark:translate-x-4 dark:bg-(--accent-strong)" />

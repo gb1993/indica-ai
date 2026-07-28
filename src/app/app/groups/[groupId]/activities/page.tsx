@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { AppIcon } from "@/components/app-icon";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Atividades do grupo" };
@@ -89,7 +90,9 @@ export default async function GroupActivitiesPage({
           <ol className="space-y-3">
             {activities.map((activity) => (
               <li key={activity.id} className="app-panel flex gap-4 p-5">
-                <span aria-hidden className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-(--accent-soft) text-(--accent-strong)">◇</span>
+                <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-(--accent-soft) text-(--accent-strong)">
+                  <AppIcon name="sparkles" className="size-4.5" />
+                </span>
                 <div>
                   <p className="leading-relaxed">
                     <strong>{activity.actor?.name ?? metadataText(activity.metadata, "actor_name") ?? "Sistema"}</strong>{" "}
@@ -108,9 +111,19 @@ export default async function GroupActivitiesPage({
 
         {!error && totalPages > 1 ? (
           <nav aria-label="Paginação das atividades" className="mt-6 flex items-center justify-between gap-4 text-sm">
-            {page > 1 ? <Link href={`?page=${page - 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">← Anterior</Link> : <span />}
+            {page > 1 ? (
+              <Link href={`?page=${page - 1}`} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">
+                <AppIcon name="arrow-left" className="size-4" />
+                Anterior
+              </Link>
+            ) : <span />}
             <span className="text-(--muted)">Página {Math.min(page, totalPages)} de {totalPages}</span>
-            {page < totalPages ? <Link href={`?page=${page + 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">Próxima →</Link> : <span />}
+            {page < totalPages ? (
+              <Link href={`?page=${page + 1}`} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">
+                Próxima
+                <AppIcon name="arrow-right" className="size-4" />
+              </Link>
+            ) : <span />}
           </nav>
         ) : null}
       </section>

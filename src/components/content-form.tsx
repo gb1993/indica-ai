@@ -52,7 +52,7 @@ function ManualFields({
         >
           {CONTENT_TYPES.map((value) => (
             <option key={value} value={value}>
-              {CONTENT_TYPE_META[value].icon} {CONTENT_TYPE_META[value].label}
+              {CONTENT_TYPE_META[value].label}
             </option>
           ))}
         </select>

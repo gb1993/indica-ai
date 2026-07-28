@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { ContentStatus, ContentType } from "@/lib/content";
 
+import { AppIcon } from "./app-icon";
 import { ContentStatusBadge, ContentTypeBadge } from "./content-badges";
 import { ContentThumbnail } from "./content-thumbnail";
 import { MostActiveBadge, type ActivityRank } from "./most-active-badge";
@@ -58,7 +59,14 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
             <div className="flex justify-between gap-3">
               <dt>Média</dt>
               <dd className="text-(--foreground)">
-                {content.average_rating === null ? "Sem avaliações" : `${content.average_rating.toFixed(1)} ★`}
+                {content.average_rating === null ? (
+                  "Sem avaliações"
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    {content.average_rating.toFixed(1)}
+                    <AppIcon name="star" className="size-3.5 text-(--gold)" fill="currentColor" />
+                  </span>
+                )}
               </dd>
             </div>
             <div className="flex justify-between gap-3">

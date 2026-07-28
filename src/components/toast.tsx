@@ -1,5 +1,7 @@
 "use client";
 
+import { AppIcon } from "./app-icon";
+
 export function Toast({
   status,
   message,
@@ -19,9 +21,11 @@ export function Toast({
           : "border-emerald-500/40 bg-(--surface) text-emerald-700 dark:text-emerald-300"
       }`}
     >
-      <span aria-hidden>{status === "error" ? "⚠" : "✓"}</span>
+      <AppIcon name={status === "error" ? "warning" : "check"} className="mt-0.5 size-4.5 shrink-0" />
       <p className="min-w-0 flex-1 text-sm font-medium">{message}</p>
-      <button type="button" onClick={onDismiss} aria-label="Fechar aviso" className="grid size-7 shrink-0 place-items-center rounded-lg hover:bg-(--surface-muted)">×</button>
+      <button type="button" onClick={onDismiss} aria-label="Fechar aviso" className="grid size-7 shrink-0 place-items-center rounded-lg hover:bg-(--surface-muted)">
+        <AppIcon name="close" className="size-4" />
+      </button>
     </div>
   );
 }
