@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Carousel } from "@/components/carousel";
 import { ContentCard, type ContentCardData } from "@/components/content-card";
 import { EmptyState } from "@/components/empty-state";
 import { type ContentStatus } from "@/lib/content";
@@ -134,7 +135,10 @@ export default async function GroupPage({
                 <span className="grid min-w-7 place-items-center rounded-full bg-(--surface-muted) px-2 py-1 text-xs text-(--muted)">{items.length}</span>
               </div>
               {items.length ? (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <Carousel
+                  ariaLabel={section.title}
+                  slideClassName="basis-[88%] sm:basis-1/2 lg:basis-1/3"
+                >
                   {items.map((content) => (
                     <ContentCard
                       key={content.id}
@@ -142,7 +146,7 @@ export default async function GroupPage({
                       eager={content.id === firstVisibleContentId}
                     />
                   ))}
-                </div>
+                </Carousel>
               ) : (
                 <EmptyState
                   title={section.title}
