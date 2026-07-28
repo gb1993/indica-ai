@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(4);
+select plan(5);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -60,18 +60,41 @@ select ok(
   'primeiro login confirmado cria perfil'
 );
 
+update public.profiles
+set
+  name = 'Nome personalizado',
+  avatar_url = 'https://storage.example/avatar.webp'
+where id = '91000000-0000-0000-0000-000000000001';
+
 update auth.users
-set raw_user_meta_data = '{"name":"Usuário confirmado"}'
+set
+  raw_user_meta_data = '{"name":"Metadado antigo","avatar_url":"https://auth.example/avatar.webp"}',
+  last_sign_in_at = now() + interval '1 minute'
+where id = '91000000-0000-0000-0000-000000000001';
+
+select results_eq(
+  $$select name, avatar_url
+    from public.profiles
+    where id = '91000000-0000-0000-0000-000000000001'$$,
+  $$values (
+    'Nome personalizado'::text,
+    'https://storage.example/avatar.webp'::text
+  )$$,
+  'novo login preserva nome e avatar personalizados'
+);
+
+update auth.users
+set email = 'email-atualizado@example.com'
 where id = '91000000-0000-0000-0000-000000000001';
 
 select is(
   (
-    select name
+    select email
     from public.profiles
     where id = '91000000-0000-0000-0000-000000000001'
   ),
-  'Usuário confirmado',
-  'alterações posteriores continuam sincronizadas'
+  'email-atualizado@example.com',
+  'e-mail continua sincronizado pelo Auth'
 );
 
 select * from finish();
