@@ -182,7 +182,7 @@ export function AppSidebar(props: AppSidebarProps) {
         <details className="group relative">
           <summary className="grid size-10 cursor-pointer list-none place-items-center rounded-xl border bg-(--surface)">
             <span className="sr-only">Abrir navegação</span>
-            <span aria-hidden className="text-xl leading-none">☰</span>
+            <AppIcon name="menu" className="size-5" />
           </summary>
           <div className="fixed inset-x-3 top-18 flex max-h-[calc(100vh-5.25rem)] flex-col overflow-hidden rounded-2xl border bg-(--background) shadow-2xl shadow-black/40">
             <SidebarContent {...props} />

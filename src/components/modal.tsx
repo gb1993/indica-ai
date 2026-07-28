@@ -7,6 +7,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { AppIcon } from "./app-icon";
+
 export function Modal({
   open,
   title,
@@ -80,7 +82,7 @@ export function Modal({
           onClick={onClose}
           className="grid size-9 shrink-0 place-items-center rounded-full border bg-(--surface-muted) text-lg text-(--muted) hover:border-(--accent) hover:text-(--accent)"
         >
-          <span aria-hidden>×</span>
+          <AppIcon name="close" className="size-5" />
         </button>
       </div>
       <div className="max-h-[calc(90vh-6rem)] overflow-y-auto p-5 sm:p-6">

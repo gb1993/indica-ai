@@ -177,6 +177,11 @@ export async function deleteAvatar({
     throw new Error("Sua sessão expirou. Entre novamente.");
   }
 
-  await dependencies.removeObject(avatarObjectPath(userId));
   await dependencies.updateProfile(null);
+  try {
+    await dependencies.removeObject(avatarObjectPath(userId));
+  } catch {
+    // The profile no longer exposes the avatar. A leftover object is safer
+    // than leaving the profile pointing to a file that no longer exists.
+  }
 }
