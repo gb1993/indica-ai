@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Carousel } from "@/components/carousel";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { createClient } from "@/lib/supabase/server";
 import { getTmdbRecommendations } from "@/lib/tmdb";
@@ -80,7 +81,10 @@ export default async function RecommendationsPage() {
                   Esta seleção não pôde ser carregada agora.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                <Carousel
+                  ariaLabel={`Filmes: ${section.title}`}
+                  slideClassName="basis-[82%] sm:basis-[48%] lg:basis-1/3 xl:basis-1/4 2xl:basis-1/5"
+                >
                   {section.items.map((item) => (
                     <RecommendationCard
                       key={`${section.id}-${item.mediaType}-${item.tmdbId}`}
@@ -89,7 +93,7 @@ export default async function RecommendationsPage() {
                       sectionId={section.id}
                     />
                   ))}
-                </div>
+                </Carousel>
               )}
             </section>
           ))}
