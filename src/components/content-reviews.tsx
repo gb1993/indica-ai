@@ -1,12 +1,8 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useRef } from "react";
 
+import { Carousel } from "./carousel";
 import { MemberAvatar } from "./member-avatar";
 import { MostActiveBadge } from "./most-active-badge";
 
@@ -19,26 +15,6 @@ export type ContentReview = {
   avatarUrl: string | null;
   isMostActive: boolean;
 };
-
-function subscribeToDesktop(callback: () => void) {
-  const query = window.matchMedia("(min-width: 768px)");
-  query.addEventListener("change", callback);
-  return () => query.removeEventListener("change", callback);
-}
-
-function getDesktopSnapshot() {
-  return window.matchMedia("(min-width: 768px)").matches;
-}
-
-function subscribeToReducedMotion(callback: () => void) {
-  const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-  query.addEventListener("change", callback);
-  return () => query.removeEventListener("change", callback);
-}
-
-function getReducedMotionSnapshot() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 function ReviewCard({ review }: { review: ContentReview }) {
   return (
@@ -66,103 +42,7 @@ function ReviewCard({ review }: { review: ContentReview }) {
   );
 }
 
-function SliderTrack({
-  reviews,
-  visibleCount,
-  autoplay,
-}: {
-  reviews: ContentReview[];
-  visibleCount: number;
-  autoplay: boolean;
-}) {
-  const [index, setIndex] = useState(visibleCount);
-  const [transitionEnabled, setTransitionEnabled] = useState(true);
-  const [paused, setPaused] = useState(false);
-  const canSlide = reviews.length > visibleCount;
-  const leadingClones = reviews.slice(-visibleCount);
-  const trailingClones = reviews.slice(0, visibleCount);
-  const slides = canSlide
-    ? [...leadingClones, ...reviews, ...trailingClones]
-    : reviews;
-
-  useEffect(() => {
-    if (!canSlide || paused || !autoplay) return;
-
-    const interval = window.setInterval(() => {
-      setTransitionEnabled(true);
-      setIndex((current) => current + 1);
-    }, 4500);
-
-    return () => window.clearInterval(interval);
-  }, [autoplay, canSlide, paused]);
-
-  if (!canSlide) {
-    return (
-      <div className={`grid gap-4 ${reviews.length > 1 ? "md:grid-cols-2" : ""}`}>
-        {reviews.map((review) => <ReviewCard key={review.id} review={review} />)}
-      </div>
-    );
-  }
-
-  const slideWidth = 100 / visibleCount;
-
-  return (
-    <div
-      className="overflow-hidden"
-      role="region"
-      aria-roledescription="carrossel"
-      aria-label="Destaques das avaliações"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false);
-      }}
-    >
-      <div
-        className="flex"
-        style={{
-          transform: `translateX(-${index * slideWidth}%)`,
-          transition: transitionEnabled ? "transform 500ms ease" : "none",
-        }}
-        onTransitionEnd={() => {
-          if (index >= reviews.length + visibleCount) {
-            setTransitionEnabled(false);
-            setIndex(visibleCount);
-          }
-        }}
-      >
-        {slides.map((review, slideIndex) => {
-          const isClone = slideIndex < visibleCount
-            || slideIndex >= reviews.length + visibleCount;
-          return (
-            <div
-              key={`${review.id}-${slideIndex}`}
-              className="shrink-0 px-2"
-              style={{ width: `${slideWidth}%` }}
-              aria-hidden={isClone || undefined}
-            >
-              <ReviewCard review={review} />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function ContentReviews({ reviews }: { reviews: ContentReview[] }) {
-  const isDesktop = useSyncExternalStore(
-    subscribeToDesktop,
-    getDesktopSnapshot,
-    () => false,
-  );
-  const visibleCount = isDesktop && reviews.length > 1 ? 2 : 1;
-  const reducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    getReducedMotionSnapshot,
-    () => false,
-  );
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -176,12 +56,14 @@ export function ContentReviews({ reviews }: { reviews: ContentReview[] }) {
 
   return (
     <>
-      <SliderTrack
-        key={visibleCount}
-        reviews={reviews}
-        visibleCount={visibleCount}
-        autoplay={!reducedMotion}
-      />
+      <Carousel
+        ariaLabel="Destaques das avaliações"
+        slideClassName="basis-full md:basis-1/2"
+        loop
+        autoplay
+      >
+        {reviews.map((review) => <ReviewCard key={review.id} review={review} />)}
+      </Carousel>
 
       <div className="mt-5 flex justify-center">
         <button

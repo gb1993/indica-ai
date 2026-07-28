@@ -24,8 +24,9 @@ type AppSidebarProps = {
   logoutAction: () => Promise<void>;
 };
 
-const primaryLinks: Array<{ href: string; label: string; icon: AppIconName }> = [
+const primaryLinks: Array<{ href: string; label: string; icon: AppIconName; isNew?: boolean }> = [
   { href: "/dashboard", label: "Início", icon: "home" },
+  { href: "/app/recommendations", label: "Descobrir", icon: "discover", isNew: true },
   { href: "/app/profile", label: "Perfil", icon: "user" },
   { href: "/app/groups/new", label: "Criar grupo", icon: "plus" },
 ];
@@ -48,11 +49,13 @@ function NavLink({
   label,
   icon,
   active,
+  isNew,
 }: {
   href: string;
   label: string;
   icon: AppIconName;
   active: boolean;
+  isNew?: boolean;
 }) {
   return (
     <Link
@@ -66,6 +69,11 @@ function NavLink({
     >
       <AppIcon name={icon} className={`size-[1.1rem] ${active ? "text-(--accent-strong)" : ""}`} />
       <span className="truncate">{label}</span>
+      {isNew ? (
+        <span className="new-feature-badge ml-auto" aria-label="Novo recurso">
+          NEW
+        </span>
+      ) : null}
     </Link>
   );
 }

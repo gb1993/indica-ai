@@ -25,13 +25,13 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
   return (
     <Link
       href={`/app/groups/${content.group_id}/contents/${content.id}`}
-      className="group overflow-hidden rounded-xl border bg-(--surface) shadow-[0_14px_36px_rgba(0,0,0,.08)] transition hover:-translate-y-1 hover:border-(--accent) hover:shadow-[0_18px_40px_rgba(0,0,0,.16)] motion-reduce:hover:translate-y-0"
+      className="group flex h-full flex-col overflow-hidden rounded-xl border bg-(--surface) shadow-[0_14px_36px_rgba(0,0,0,.08)] transition hover:-translate-y-1 hover:border-(--accent) hover:shadow-[0_18px_40px_rgba(0,0,0,.16)] motion-reduce:hover:translate-y-0"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-(--surface-muted)">
         <ContentThumbnail src={content.thumbnail_url} alt={`Capa de ${content.title}`} title={content.title} eager={eager} />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
       </div>
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <ContentTypeBadge type={content.type} />
           <ContentStatusBadge status={content.status} />
