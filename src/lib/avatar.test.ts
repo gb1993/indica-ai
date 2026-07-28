@@ -220,7 +220,7 @@ test("preserva o erro original mesmo se a limpeza do upload falhar", async () =>
   );
 });
 
-test("remove o arquivo antes de limpar a URL do perfil", async () => {
+test("limpa a URL do perfil antes de remover o arquivo", async () => {
   const calls: string[] = [];
   await deleteAvatar({
     userId: "user-1",
@@ -234,7 +234,25 @@ test("remove o arquivo antes de limpar a URL do perfil", async () => {
       },
     },
   });
-  assert.deepEqual(calls, ["remove:user-1/avatar.webp", "profile:null"]);
+  assert.deepEqual(calls, ["profile:null", "remove:user-1/avatar.webp"]);
+});
+
+test("mantém o avatar removido do perfil quando a limpeza do arquivo falha", async () => {
+  const calls: string[] = [];
+  await deleteAvatar({
+    userId: "user-1",
+    dependencies: {
+      authenticate: async () => "user-1",
+      removeObject: async () => {
+        calls.push("remove");
+        throw new Error("storage unavailable");
+      },
+      updateProfile: async (url) => {
+        calls.push(`profile:${url}`);
+      },
+    },
+  });
+  assert.deepEqual(calls, ["profile:null", "remove"]);
 });
 
 test("bloqueia remoção com sessão divergente", async () => {
