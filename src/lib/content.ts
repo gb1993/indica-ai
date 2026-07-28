@@ -7,10 +7,10 @@ export const CONTENT_TYPES = [
 export type ContentType = (typeof CONTENT_TYPES)[number];
 export type ContentStatus = "pending" | "approved" | "completed";
 
-export const CONTENT_TYPE_META: Record<ContentType, { label: string; icon: string }> = {
-  movie: { label: "Filme", icon: "🎬" },
-  series: { label: "Série", icon: "📺" },
-  documentary: { label: "Documentário", icon: "🎥" },
+export const CONTENT_TYPE_META: Record<ContentType, { label: string }> = {
+  movie: { label: "Filme" },
+  series: { label: "Série" },
+  documentary: { label: "Documentário" },
 };
 
 export const CONTENT_STATUS_META: Record<ContentStatus, { label: string }> = {

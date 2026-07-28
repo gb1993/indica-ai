@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
+import { AppIcon } from "@/components/app-icon";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentStatusBadge, ContentTypeBadge } from "@/components/content-badges";
 import { ContentForm } from "@/components/content-form";
@@ -347,7 +348,14 @@ export default async function ContentDetailsPage({
             </div>
             <div className="rounded-2xl bg-(--surface-muted) px-5 py-3 text-right">
               <p className="text-2xl font-bold" aria-label={ratingSummary.average_rating === null ? "Sem avaliações" : `Média ${ratingSummary.average_rating.toFixed(1)} de 5`}>
-                {ratingSummary.average_rating === null ? "—" : `${ratingSummary.average_rating.toFixed(1)} ★`}
+                {ratingSummary.average_rating === null ? (
+                  "—"
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    {ratingSummary.average_rating.toFixed(1)}
+                    <AppIcon name="star" className="size-5 text-(--gold)" fill="currentColor" />
+                  </span>
+                )}
               </p>
               <p className="text-xs text-(--muted)">
                 {ratingSummary.rating_count} {ratingSummary.rating_count === 1 ? "avaliação" : "avaliações"}
@@ -477,11 +485,17 @@ export default async function ContentDetailsPage({
           {!messagesError && totalMessagePages > 1 ? (
             <nav aria-label="Paginação das mensagens" className="mt-6 flex items-center justify-between gap-4 text-sm">
               {messagesPage > 1 ? (
-                <Link href={`?messagesPage=${messagesPage - 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">← Mais recentes</Link>
+                <Link href={`?messagesPage=${messagesPage - 1}`} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">
+                  <AppIcon name="arrow-left" className="size-4" />
+                  Mais recentes
+                </Link>
               ) : <span />}
               <span className="text-(--muted)">Página {Math.min(messagesPage, totalMessagePages)} de {totalMessagePages}</span>
               {messagesPage < totalMessagePages ? (
-                <Link href={`?messagesPage=${messagesPage + 1}`} className="rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">Mais antigas →</Link>
+                <Link href={`?messagesPage=${messagesPage + 1}`} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-(--surface-muted)">
+                  Mais antigas
+                  <AppIcon name="arrow-right" className="size-4" />
+                </Link>
               ) : <span />}
             </nav>
           ) : null}

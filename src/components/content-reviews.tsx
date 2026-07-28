@@ -3,6 +3,7 @@
 import { useRef } from "react";
 
 import { Carousel } from "./carousel";
+import { AppIcon } from "./app-icon";
 import { MemberAvatar } from "./member-avatar";
 import { MostActiveBadge, type ActivityRank } from "./most-active-badge";
 
@@ -23,9 +24,15 @@ function ReviewCard({ review }: { review: ContentReview }) {
         className="text-xl tracking-wider text-amber-500"
         aria-label={`${review.rating} de 5 estrelas`}
       >
-        <span aria-hidden>
-          {"★".repeat(review.rating)}
-          <span className="text-(--border)">{"★".repeat(5 - review.rating)}</span>
+        <span aria-hidden className="inline-flex gap-0.5">
+          {Array.from({ length: 5 }, (_, index) => (
+            <AppIcon
+              key={index}
+              name="star"
+              className={`size-4.5 ${index < review.rating ? "" : "text-(--border)"}`}
+              fill="currentColor"
+            />
+          ))}
         </span>
       </p>
       <div className="mt-3 flex items-center gap-3">
@@ -95,7 +102,7 @@ export function ContentReviews({ reviews }: { reviews: ContentReview[] }) {
             onClick={() => dialogRef.current?.close()}
             className="grid size-10 shrink-0 place-items-center rounded-full border text-xl"
           >
-            <span aria-hidden>×</span>
+            <AppIcon name="close" className="size-5" />
           </button>
         </div>
         <div className="p-5 sm:p-7">

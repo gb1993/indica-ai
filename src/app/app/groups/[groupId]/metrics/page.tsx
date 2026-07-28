@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/app-icon";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentThumbnail } from "@/components/content-thumbnail";
 import { EmptyState } from "@/components/empty-state";
+import { RankingBadge } from "@/components/ranking-badge";
 import { CONTENT_TYPE_META, type ContentType } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,19 +38,7 @@ type DiscussedContent = {
 };
 
 function RankBadge({ position }: { position: number }) {
-  const medalStyles = [
-    "bg-[linear-gradient(145deg,#ffe28a,#eaa90d)] text-[#3d2a00]",
-    "bg-[linear-gradient(145deg,#eef2f7,#9da8ba)] text-[#273244]",
-    "bg-[linear-gradient(145deg,#f2b66d,#a45a20)] text-[#321700]",
-  ];
-
-  return (
-    <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black shadow-md ${
-      medalStyles[position - 1] ?? "bg-[#b9c1d1] text-[#252b38]"
-    }`}>
-      {position}º
-    </span>
-  );
+  return <RankingBadge position={position} />;
 }
 
 function MemberInitial({ name }: { name: string }) {
@@ -150,7 +139,7 @@ export default async function GroupMetricsPage({
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
               <div>
                 <h2 className="flex items-center gap-3 text-xl font-bold">
-                  <span aria-hidden className="text-2xl text-(--gold)">★</span>
+                  <AppIcon name="star" className="size-6 text-(--gold)" fill="currentColor" />
                   Melhores avaliados
                 </h2>
                 <p className="mt-1 text-sm text-(--muted)">
@@ -189,7 +178,10 @@ export default async function GroupMetricsPage({
                           {content.title}
                         </h3>
                         <p className="mt-3 flex items-center gap-2 text-sm">
-                          <strong className="text-(--gold)">★ {Number(content.average_rating).toFixed(1)}</strong>
+                          <strong className="inline-flex items-center gap-1 text-(--gold)">
+                            <AppIcon name="star" className="size-4" fill="currentColor" />
+                            {Number(content.average_rating).toFixed(1)}
+                          </strong>
                           <span className="text-xs text-(--muted)">
                             {content.rating_count} {content.rating_count === 1 ? "avaliação" : "avaliações"}
                           </span>
@@ -208,7 +200,7 @@ export default async function GroupMetricsPage({
               </div>
             )}
             <p className="mt-5 text-xs text-(--muted)">
-              <span className="mr-1 text-(--accent-strong)">ⓘ</span>
+              <AppIcon name="info" className="mr-1 inline size-3.5 text-(--accent-strong)" />
               O ranking considera avaliações feitas por membros ativos.
             </p>
           </section>
@@ -273,7 +265,7 @@ export default async function GroupMetricsPage({
           <section className="app-panel p-5 sm:p-6">
             <div>
               <h2 className="flex items-center gap-3 text-xl font-bold">
-                <span aria-hidden className="text-xl text-(--accent-strong)">◌</span>
+                <AppIcon name="messages" className="size-5 text-(--accent-strong)" />
                 Conteúdos mais discutidos
               </h2>
               <p className="mt-1 text-sm text-(--muted)">Conversas com maior participação dos membros ativos.</p>

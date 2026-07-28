@@ -5,6 +5,7 @@ import { useState } from "react";
 import { setContentRating } from "@/app/app/groups/[groupId]/contents/actions";
 
 import { ActionForm } from "./action-form";
+import { AppIcon } from "./app-icon";
 
 const ratingLabels: Record<number, string> = {
   1: "Péssimo",
@@ -56,7 +57,11 @@ export function ContentRatingForm({
                 className="sr-only"
                 required
               />
-              <span aria-hidden>{value <= rating ? "★" : "☆"}</span>
+              <AppIcon
+                name="star"
+                className="size-6"
+                fill={value <= rating ? "currentColor" : "none"}
+              />
               <span className="sr-only">{value} de 5 — {ratingLabels[value]}</span>
             </label>
           ))}
