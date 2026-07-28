@@ -23,17 +23,23 @@ export function ActionForm({
   pendingLabel = "Salvando…",
   className,
   buttonClassName,
+  submitAriaLabel,
+  submitTitle,
   confirmMessage,
   resetOnSuccess = false,
+  onSuccess,
 }: {
   action: ActionHandler;
   children: ReactNode;
-  submitLabel: string;
-  pendingLabel?: string;
+  submitLabel: ReactNode;
+  pendingLabel?: ReactNode;
   className?: string;
   buttonClassName?: string;
+  submitAriaLabel?: string;
+  submitTitle?: string;
   confirmMessage?: string;
   resetOnSuccess?: boolean;
+  onSuccess?: () => void;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
@@ -43,7 +49,10 @@ export function ActionForm({
     async (previousState: ActionState, formData: FormData) => {
       setToastVisible(false);
       const result = await action(previousState, formData);
-      if (result.status === "success" && resetOnSuccess) formRef.current?.reset();
+      if (result.status === "success") {
+        if (resetOnSuccess) formRef.current?.reset();
+        onSuccess?.();
+      }
       if (result.message) setToastVisible(true);
       return result;
     },
@@ -72,6 +81,8 @@ export function ActionForm({
           type="submit"
           disabled={pending}
           className={buttonClassName}
+          aria-label={submitAriaLabel}
+          title={submitTitle}
         >
           {pending ? pendingLabel : submitLabel}
         </button>

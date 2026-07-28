@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
 
-type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count"> & {
+type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count" | "is_creator_most_active"> & {
   ratings: Array<{ rating: number }>;
 };
 
@@ -49,14 +49,21 @@ export default async function GroupPage({
     : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: membership }, { count }, { data: contentRows }] = await Promise.all([
+  const [{ data: group }, { data: membership }, { count }, { data: contentRows }, mostActiveResult] = await Promise.all([
     supabase.from("groups").select("id, name, description").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
     supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "active"),
-    supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, creator:profiles!contents_created_by_fkey(name), ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
+    supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, creator:profiles!contents_created_by_fkey(id, name), ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
+    supabase.rpc("get_group_most_active_members", { p_group_id: groupId }),
   ]);
   if (!group || !membership) notFound();
   const isOwner = membership.role === "owner";
+  const topMember = Array.isArray(mostActiveResult.data)
+    ? mostActiveResult.data[0] as { member_id: string; activity_score: number | string } | undefined
+    : undefined;
+  const mostActiveMemberId = topMember && Number(topMember.activity_score) > 0
+    ? topMember.member_id
+    : null;
   const contents = ((contentRows ?? []) as unknown as ContentRow[]).map((content) => {
     const ratings = content.ratings ?? [];
     const averageRating = ratings.length
@@ -66,6 +73,7 @@ export default async function GroupPage({
       ...content,
       average_rating: averageRating,
       rating_count: ratings.length,
+      is_creator_most_active: content.creator?.id === mostActiveMemberId,
     } satisfies ContentCardData;
   });
   const visibleSections = activeStatus
