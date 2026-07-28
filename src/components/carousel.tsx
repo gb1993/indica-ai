@@ -19,6 +19,7 @@ export function Carousel({
   loop = false,
   autoplay = false,
   autoplayDelay = 4500,
+  showDots = false,
 }: {
   children: ReactNode;
   ariaLabel: string;
@@ -26,6 +27,7 @@ export function Carousel({
   loop?: boolean;
   autoplay?: boolean;
   autoplayDelay?: number;
+  showDots?: boolean;
 }) {
   const slides = useMemo(() => Array.isArray(children) ? children : [children], [children]);
   const [autoplayPlugin] = useState(() => Autoplay({
@@ -95,47 +97,31 @@ export function Carousel({
         }
       }}
     >
-      <div ref={viewportRef} className="overflow-hidden">
-        <div className="-ml-4 flex touch-pan-y">
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              role="group"
-              aria-roledescription="slide"
-              aria-label={`${index + 1} de ${slides.length}`}
-              className={`min-w-0 shrink-0 pl-4 ${slideClassName}`}
-            >
-              <div className="h-full">{slide}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {scrollSnaps.length > 1 ? (
-        <div className="mt-5 flex items-center justify-between gap-4">
-          <div className="flex gap-2" aria-label="Selecionar página do carrossel">
-            {scrollSnaps.map((_, index) => (
-              <button
+      <div className="relative">
+        <div ref={viewportRef} className="overflow-hidden">
+          <div className="-ml-4 flex touch-pan-y">
+            {slides.map((slide, index) => (
+              <div
                 key={index}
-                type="button"
-                aria-label={`Ir para a página ${index + 1}`}
-                aria-current={index === selectedIndex ? "true" : undefined}
-                onClick={() => emblaApi?.scrollTo(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === selectedIndex
-                    ? "w-7 bg-(--accent)"
-                    : "w-2 bg-(--border) hover:bg-(--muted)"
-                }`}
-              />
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${index + 1} de ${slides.length}`}
+                className={`min-w-0 shrink-0 pl-4 ${slideClassName}`}
+              >
+                <div className="h-full">{slide}</div>
+              </div>
             ))}
           </div>
-          <div className="flex gap-2">
+        </div>
+
+        {scrollSnaps.length > 1 ? (
+          <>
             <button
               type="button"
               aria-label="Itens anteriores"
               disabled={!canScrollPrev}
               onClick={() => emblaApi?.scrollPrev()}
-              className="grid size-10 place-items-center rounded-full border bg-(--surface) text-(--foreground) shadow-sm disabled:opacity-35"
+              className="absolute left-2 top-1/2 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white bg-[#080d18]/95 text-white shadow-lg backdrop-blur-sm enabled:hover:border-(--accent) enabled:hover:text-(--accent) disabled:border-white/25 disabled:text-white/35 sm:-left-5"
             >
               <AppIcon name="chevron" className="size-4 rotate-180" />
             </button>
@@ -144,11 +130,30 @@ export function Carousel({
               aria-label="Próximos itens"
               disabled={!canScrollNext}
               onClick={() => emblaApi?.scrollNext()}
-              className="grid size-10 place-items-center rounded-full border bg-(--surface) text-(--foreground) shadow-sm disabled:opacity-35"
+              className="absolute right-2 top-1/2 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white bg-[#080d18]/95 text-white shadow-lg backdrop-blur-sm enabled:hover:border-(--accent) enabled:hover:text-(--accent) disabled:border-white/25 disabled:text-white/35 sm:-right-5"
             >
               <AppIcon name="chevron" className="size-4" />
             </button>
-          </div>
+          </>
+        ) : null}
+      </div>
+
+      {showDots && scrollSnaps.length > 1 ? (
+        <div className="mt-5 flex justify-center gap-2" aria-label="Selecionar página do carrossel">
+          {scrollSnaps.map((_, index) => (
+            <button
+              key={index}
+              type="button"
+              aria-label={`Ir para a página ${index + 1}`}
+              aria-current={index === selectedIndex ? "true" : undefined}
+              onClick={() => emblaApi?.scrollTo(index)}
+              className={`h-2 rounded-full transition-all ${
+                index === selectedIndex
+                  ? "w-7 bg-(--accent)"
+                  : "w-2 bg-(--border) hover:bg-(--muted)"
+              }`}
+            />
+          ))}
         </div>
       ) : null}
     </div>

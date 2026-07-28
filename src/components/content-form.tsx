@@ -194,7 +194,7 @@ export function ContentForm({
                 className="app-input"
               />
               <button type="submit" disabled={searching} className="app-button-primary shrink-0 disabled:opacity-60">
-                {searching ? "Pesquisando…" : "Pesquisar no TMDB"}
+                {searching ? "Pesquisando…" : "Pesquisar"}
               </button>
             </div>
           </form>
@@ -209,7 +209,7 @@ export function ContentForm({
                       type="button"
                       disabled={loadingDetails}
                       onClick={() => chooseResult(result)}
-                      className="flex h-full w-full gap-3 rounded-xl border bg-(--surface-muted) p-3 text-left disabled:opacity-60"
+                      className="flex h-full w-full gap-3 rounded-xl border bg-(--surface-muted) p-3 text-left disabled:opacity-60 hover:border-(--accent)"
                     >
                       <span className="relative block h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-(--surface)">
                         <ContentThumbnail
@@ -330,10 +330,6 @@ export function ContentForm({
           </button>
         </>
       ) : null}
-
-      <p className="border-t pt-4 text-xs text-(--muted)">
-        Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.
-      </p>
     </div>
   );
 }

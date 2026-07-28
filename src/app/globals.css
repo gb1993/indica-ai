@@ -163,6 +163,7 @@ button:disabled {
   font-size: 0.875rem;
   font-weight: 600;
   transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+  cursor: pointer;
 }
 
 .app-button-secondary:hover {
