@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 
-import { getTmdbDetails, searchTmdb } from "./tmdb.ts";
+import { getTmdbDetails, getTmdbRecommendations, searchTmdb } from "./tmdb.ts";
 
 const originalFetch = globalThis.fetch;
 const originalApiKey = process.env.TMDB_API_KEY;
@@ -93,4 +93,65 @@ test("rejeita configuração ausente, busca inválida e falha total", async () =
   process.env.TMDB_API_KEY = "test-key";
   globalThis.fetch = async () => new Response(null, { status: 500 });
   await assert.rejects(() => searchTmdb("indisponível"), /unavailable/);
+});
+
+test("carrega as três seções de recomendações pelos endpoints esperados", async () => {
+  process.env.TMDB_API_KEY = "test-key";
+  const requestedPaths: string[] = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    requestedPaths.push(url.pathname);
+    assert.equal(url.searchParams.get("language"), "pt-BR");
+    assert.equal(url.searchParams.get("include_adult"), "false");
+    assert.equal(url.searchParams.get("page"), "1");
+    return Response.json({
+      results: [{
+        id: requestedPaths.length,
+        title: `Filme ${requestedPaths.length}`,
+        overview: "Sinopse",
+        poster_path: "/poster.jpg",
+        release_date: "2025-03-10",
+        genre_ids: [18],
+        popularity: 10,
+      }],
+    });
+  };
+
+  const sections = await getTmdbRecommendations();
+
+  assert.deepEqual(requestedPaths.sort(), [
+    "/3/movie/popular",
+    "/3/movie/top_rated",
+    "/3/trending/movie/week",
+  ]);
+  assert.deepEqual(sections.map((section) => section.id), [
+    "trending",
+    "popular",
+    "top-rated",
+  ]);
+  assert.ok(sections.every((section) => !section.unavailable));
+  assert.ok(sections.every((section) => section.items[0]?.mediaType === "movie"));
+  assert.ok(sections.every((section) => section.items[0]?.year === "2025"));
+});
+
+test("mantém as outras recomendações quando uma seção falha", async () => {
+  process.env.TMDB_API_KEY = "test-key";
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/movie/popular")) {
+      return new Response(null, { status: 503 });
+    }
+    return Response.json({
+      results: [{ id: 42, title: "Disponível", genre_ids: [99], popularity: 4 }],
+    });
+  };
+
+  const sections = await getTmdbRecommendations();
+  const popular = sections.find((section) => section.id === "popular");
+  const available = sections.filter((section) => !section.unavailable);
+
+  assert.equal(popular?.unavailable, true);
+  assert.deepEqual(popular?.items, []);
+  assert.equal(available.length, 2);
+  assert.ok(available.every((section) => section.items[0]?.type === "documentary"));
 });

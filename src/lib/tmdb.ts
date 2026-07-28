@@ -66,6 +66,40 @@ export type TmdbContentDetails = Omit<TmdbSearchResult, "originalTitle" | "popul
   trailerUrl: string | null;
 };
 
+export type TmdbRecommendationSection = {
+  id: "trending" | "popular" | "top-rated";
+  title: string;
+  description: string;
+  items: TmdbSearchResult[];
+  unavailable: boolean;
+};
+
+const RECOMMENDATION_SECTIONS: Array<{
+  id: TmdbRecommendationSection["id"];
+  title: string;
+  description: string;
+  path: string;
+}> = [
+  {
+    id: "trending",
+    title: "Em alta",
+    description: "Os filmes que mais movimentaram a semana.",
+    path: "/trending/movie/week",
+  },
+  {
+    id: "popular",
+    title: "Populares",
+    description: "Os títulos mais procurados no momento.",
+    path: "/movie/popular",
+  },
+  {
+    id: "top-rated",
+    title: "Mais bem avaliados",
+    description: "Os favoritos do público no TMDB.",
+    path: "/movie/top_rated",
+  },
+];
+
 function apiKey() {
   return tmdbEnvSchema.parse({
     TMDB_API_KEY: process.env.TMDB_API_KEY,
@@ -127,6 +161,68 @@ async function searchByMediaType(query: string, mediaType: TmdbMediaType) {
       year: yearFrom(item.release_date ?? item.first_air_date),
       popularity: item.popularity,
     }));
+}
+
+function toSearchResult(
+  item: z.infer<typeof searchItemSchema>,
+  mediaType: TmdbMediaType,
+): TmdbSearchResult | null {
+  const title = item.title ?? item.name;
+  if (!title) return null;
+
+  return {
+    tmdbId: item.id,
+    mediaType,
+    type: contentType(mediaType, item.genre_ids),
+    title,
+    originalTitle: (item.original_title ?? item.original_name) || null,
+    description: item.overview,
+    thumbnailUrl: imageUrl(item.poster_path),
+    year: yearFrom(item.release_date ?? item.first_air_date),
+    popularity: item.popularity,
+  };
+}
+
+async function getRecommendationSection(
+  definition: (typeof RECOMMENDATION_SECTIONS)[number],
+): Promise<TmdbRecommendationSection> {
+  const payload = searchResponseSchema.parse(await fetchJson(buildUrl(
+    definition.path,
+    {
+      language: "pt-BR",
+      include_adult: "false",
+      page: "1",
+    },
+  ), "force-cache"));
+
+  return {
+    id: definition.id,
+    title: definition.title,
+    description: definition.description,
+    items: payload.results
+      .map((item) => toSearchResult(item, "movie"))
+      .filter((item): item is TmdbSearchResult => item !== null)
+      .slice(0, 12),
+    unavailable: false,
+  };
+}
+
+export async function getTmdbRecommendations(): Promise<TmdbRecommendationSection[]> {
+  const responses = await Promise.allSettled(
+    RECOMMENDATION_SECTIONS.map(getRecommendationSection),
+  );
+
+  return responses.map((response, index) => {
+    if (response.status === "fulfilled") return response.value;
+    const definition = RECOMMENDATION_SECTIONS[index];
+    return {
+      id: definition.id,
+      title: definition.title,
+      description: definition.description,
+      items: [],
+      unavailable: true,
+    };
+  });
 }
 
 export async function searchTmdb(query: string): Promise<TmdbSearchResult[]> {
