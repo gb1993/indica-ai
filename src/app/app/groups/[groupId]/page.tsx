@@ -2,16 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AppIcon } from "@/components/app-icon";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Carousel } from "@/components/carousel";
+import { CompletedContentsGrid } from "@/components/completed-contents-grid";
 import { ContentCard, type ContentCardData } from "@/components/content-card";
 import { EmptyState } from "@/components/empty-state";
+import type { ActivityRank } from "@/components/most-active-badge";
 import { type ContentStatus } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
 
-type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count" | "is_creator_most_active"> & {
+type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count" | "creator_activity_rank"> & {
   ratings: Array<{ rating: number }>;
 };
 
@@ -59,12 +62,13 @@ export default async function GroupPage({
   ]);
   if (!group || !membership) notFound();
   const isOwner = membership.role === "owner";
-  const topMember = Array.isArray(mostActiveResult.data)
-    ? mostActiveResult.data[0] as { member_id: string; activity_score: number | string } | undefined
-    : undefined;
-  const mostActiveMemberId = topMember && Number(topMember.activity_score) > 0
-    ? topMember.member_id
-    : null;
+  const activityRanks = new Map<string, ActivityRank>(
+    (Array.isArray(mostActiveResult.data) ? mostActiveResult.data : [])
+      .slice(0, 3)
+      .flatMap((member, index) => Number(member.activity_score) > 0
+        ? [[member.member_id, (index + 1) as ActivityRank] as const]
+        : []),
+  );
   const contents = ((contentRows ?? []) as unknown as ContentRow[]).map((content) => {
     const ratings = content.ratings ?? [];
     const averageRating = ratings.length
@@ -74,7 +78,9 @@ export default async function GroupPage({
       ...content,
       average_rating: averageRating,
       rating_count: ratings.length,
-      is_creator_most_active: content.creator?.id === mostActiveMemberId,
+      creator_activity_rank: content.creator
+        ? activityRanks.get(content.creator.id) ?? null
+        : null,
     } satisfies ContentCardData;
   });
   const visibleSections = activeStatus
@@ -98,11 +104,28 @@ export default async function GroupPage({
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-(--muted)">{group.description || "Este grupo ainda não possui descrição."}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/app/groups/${groupId}/metrics`} className="app-button-primary">Métricas</Link>
-            <Link href={`/app/groups/${groupId}/contents/new`} className="app-button-secondary">＋ Adicionar conteúdo</Link>
-            <Link href={`/app/groups/${groupId}/members`} className="app-button-secondary">Membros</Link>
-            <Link href={`/app/groups/${groupId}/activities`} className="app-button-secondary">Atividades</Link>
-            {isOwner && <Link href={`/app/groups/${groupId}/settings`} className="app-button-secondary">Configurações</Link>}
+            <Link href={`/app/groups/${groupId}/metrics`} className="app-button-primary">
+              <AppIcon name="chart" className="size-4" />
+              Métricas
+            </Link>
+            <Link href={`/app/groups/${groupId}/contents/new`} className="app-button-secondary">
+              <AppIcon name="plus" className="size-4" />
+              Adicionar conteúdo
+            </Link>
+            <Link href={`/app/groups/${groupId}/members`} className="app-button-secondary">
+              <AppIcon name="users" className="size-4" />
+              Membros
+            </Link>
+            <Link href={`/app/groups/${groupId}/activities`} className="app-button-secondary">
+              <AppIcon name="activity" className="size-4" />
+              Atividades
+            </Link>
+            {isOwner && (
+              <Link href={`/app/groups/${groupId}/settings`} className="app-button-secondary">
+                <AppIcon name="settings" className="size-4" />
+                Configurações
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -135,18 +158,25 @@ export default async function GroupPage({
                 <span className="grid min-w-7 place-items-center rounded-full bg-(--surface-muted) px-2 py-1 text-xs text-(--muted)">{items.length}</span>
               </div>
               {items.length ? (
-                <Carousel
-                  ariaLabel={section.title}
-                  slideClassName="basis-[82%] sm:basis-[48%] lg:basis-1/3 xl:basis-1/4 2xl:basis-1/5"
-                >
-                  {items.map((content) => (
-                    <ContentCard
-                      key={content.id}
-                      content={content}
-                      eager={content.id === firstVisibleContentId}
-                    />
-                  ))}
-                </Carousel>
+                section.status === "completed" ? (
+                  <CompletedContentsGrid
+                    contents={items}
+                    eagerContentId={firstVisibleContentId}
+                  />
+                ) : (
+                  <Carousel
+                    ariaLabel={section.title}
+                    slideClassName="basis-[82%] sm:basis-[48%] lg:basis-1/3 xl:basis-1/4"
+                  >
+                    {items.map((content) => (
+                      <ContentCard
+                        key={content.id}
+                        content={content}
+                        eager={content.id === firstVisibleContentId}
+                      />
+                    ))}
+                  </Carousel>
+                )
               ) : (
                 <EmptyState
                   title={section.title}

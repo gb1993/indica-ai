@@ -4,7 +4,7 @@ import type { ContentStatus, ContentType } from "@/lib/content";
 
 import { ContentStatusBadge, ContentTypeBadge } from "./content-badges";
 import { ContentThumbnail } from "./content-thumbnail";
-import { MostActiveBadge } from "./most-active-badge";
+import { MostActiveBadge, type ActivityRank } from "./most-active-badge";
 
 export type ContentCardData = {
   id: string;
@@ -16,7 +16,7 @@ export type ContentCardData = {
   status: ContentStatus;
   completed_at: string | null;
   creator: { id: string; name: string } | null;
-  is_creator_most_active: boolean;
+  creator_activity_rank: ActivityRank | null;
   average_rating: number | null;
   rating_count: number;
 };
@@ -41,7 +41,9 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
           <p>
             Indicado por <span className="font-semibold text-(--foreground)">{content.creator?.name ?? "Membro"}</span>
           </p>
-          {content.is_creator_most_active ? <MostActiveBadge /> : null}
+          {content.creator_activity_rank ? (
+            <MostActiveBadge position={content.creator_activity_rank} />
+          ) : null}
         </div>
         {content.status === "completed" ? (
           <dl className="mt-3 space-y-1.5 border-t pt-3 text-xs text-(--muted)">
