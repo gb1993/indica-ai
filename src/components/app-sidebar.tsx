@@ -106,7 +106,7 @@ function SidebarContent({
 
         <div className="my-5 border-t" />
         <div className="mb-2 flex items-center justify-between px-3">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-(--muted)">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-white">
             Meus grupos
           </p>
           <span className="text-xs text-(--muted)">{groups.length}</span>
@@ -184,7 +184,7 @@ export function AppSidebar(props: AppSidebarProps) {
             <span className="sr-only">Abrir navegação</span>
             <span aria-hidden className="text-xl leading-none">☰</span>
           </summary>
-          <div className="fixed inset-x-3 top-[4.5rem] flex max-h-[calc(100vh-5.25rem)] flex-col overflow-hidden rounded-2xl border bg-(--background) shadow-2xl shadow-black/40">
+          <div className="fixed inset-x-3 top-18 flex max-h-[calc(100vh-5.25rem)] flex-col overflow-hidden rounded-2xl border bg-(--background) shadow-2xl shadow-black/40">
             <SidebarContent {...props} />
           </div>
         </details>

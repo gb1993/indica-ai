@@ -70,7 +70,7 @@ export default async function RecommendationsPage() {
                   <p className="mt-1 text-sm text-(--muted)">{section.description}</p>
                 </div>
                 {!section.unavailable ? (
-                  <span className="shrink-0 text-xs text-(--muted)">
+                  <span className="shrink-0 text-xs text-(--accent)">
                     {section.items.length} títulos
                   </span>
                 ) : null}
@@ -99,10 +99,6 @@ export default async function RecommendationsPage() {
           ))}
         </div>
       )}
-
-      <p className="mt-12 border-t pt-5 text-xs text-(--muted)">
-        Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.
-      </p>
     </main>
   );
 }
