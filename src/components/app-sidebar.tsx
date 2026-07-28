@@ -26,6 +26,7 @@ type AppSidebarProps = {
 
 const primaryLinks: Array<{ href: string; label: string; icon: AppIconName }> = [
   { href: "/dashboard", label: "Início", icon: "home" },
+  { href: "/app/recommendations", label: "Descobrir", icon: "discover" },
   { href: "/app/profile", label: "Perfil", icon: "user" },
   { href: "/app/groups/new", label: "Criar grupo", icon: "plus" },
 ];

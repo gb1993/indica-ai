@@ -5,6 +5,7 @@ export type AppIconName =
   | "chart"
   | "chevron"
   | "clapper"
+  | "discover"
   | "home"
   | "logout"
   | "pencil"
@@ -34,6 +35,12 @@ export function AppIcon({
         <path d="M4 7h16v12H4z" />
         <path d="m4 7 3-4h4L8 7m4 0 3-4h4l-3 4" />
         <path d="m10 11 5 3-5 3z" />
+      </>
+    ),
+    discover: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z" />
       </>
     ),
     home: (
