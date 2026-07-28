@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentCard, type ContentCardData } from "@/components/content-card";
 import { EmptyState } from "@/components/empty-state";
-import { CONTENT_TYPES, CONTENT_TYPE_META, type ContentStatus, type ContentType } from "@/lib/content";
+import { type ContentStatus } from "@/lib/content";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
@@ -17,7 +17,7 @@ type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count"> & {
 const sections: Array<{ status: ContentStatus; title: string; subtitle: string; empty: string }> = [
   {
     status: "pending",
-    title: "Indicado pelo grupo",
+    title: "Indicados pelo grupo",
     subtitle: "Vote nas indicações. A maioria dos membros ativos precisa aprovar para o conteúdo avançar.",
     empty: "Nenhum conteúdo aguardando aprovação.",
   },
@@ -40,11 +40,13 @@ export default async function GroupPage({
   searchParams,
 }: {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ status?: string }>;
 }) {
   const { groupId } = await params;
   const query = await searchParams;
-  const activeType = CONTENT_TYPES.includes(query.type as ContentType) ? query.type as ContentType : null;
+  const activeStatus = sections.some((section) => section.status === query.status)
+    ? query.status as ContentStatus
+    : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   const [{ data: group }, { data: membership }, { count }, { data: contentRows }] = await Promise.all([
@@ -66,9 +68,11 @@ export default async function GroupPage({
       rating_count: ratings.length,
     } satisfies ContentCardData;
   });
-  const filteredContents = activeType ? contents.filter((content) => content.type === activeType) : contents;
-  const firstVisibleContentId = sections
-    .flatMap((section) => filteredContents.filter((content) => content.status === section.status))
+  const visibleSections = activeStatus
+    ? sections.filter((section) => section.status === activeStatus)
+    : sections;
+  const firstVisibleContentId = visibleSections
+    .flatMap((section) => contents.filter((content) => content.status === section.status))
     .at(0)?.id;
 
   return (
@@ -94,15 +98,15 @@ export default async function GroupPage({
         </div>
       </section>
 
-      <section aria-label="Filtrar conteúdos por tipo" className="mt-8 border-b">
+      <section aria-label="Filtrar conteúdos por status" className="mt-8 border-b">
         <div className="flex gap-1 overflow-x-auto">
-          <Link href={`/app/groups/${groupId}`} aria-current={!activeType ? "true" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeType ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
-          {CONTENT_TYPES.map((type) => {
+          <Link href={`/app/groups/${groupId}`} aria-current={!activeStatus ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeStatus ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
+          {sections.map((section) => {
             const params = new URLSearchParams();
-            params.set("type", type);
+            params.set("status", section.status);
             return (
-              <Link key={type} href={`/app/groups/${groupId}?${params}`} aria-current={activeType === type ? "true" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeType === type ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>
-                <span aria-hidden>{CONTENT_TYPE_META[type].icon}</span> {CONTENT_TYPE_META[type].label}
+              <Link key={section.status} href={`/app/groups/${groupId}?${params}`} aria-current={activeStatus === section.status ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeStatus === section.status ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>
+                {section.title}
               </Link>
             );
           })}
@@ -110,8 +114,8 @@ export default async function GroupPage({
       </section>
 
       <div className="mt-8 space-y-10">
-        {sections.map((section) => {
-          const items = filteredContents.filter((content) => content.status === section.status);
+        {visibleSections.map((section) => {
+          const items = contents.filter((content) => content.status === section.status);
           return (
             <section key={section.status}>
               <div className="mb-4 flex items-start justify-between gap-4">
@@ -134,7 +138,7 @@ export default async function GroupPage({
               ) : (
                 <EmptyState
                   title={section.title}
-                  description={activeType ? `Nenhum conteúdo do tipo ${CONTENT_TYPE_META[activeType].label.toLowerCase()} nesta seção.` : section.empty}
+                  description={section.empty}
                   action={section.status !== "completed" ? (
                     <Link
                       href={`/app/groups/${groupId}/contents/new`}
