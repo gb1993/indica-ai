@@ -14,7 +14,10 @@ import {
 } from "@/components/content-reviews";
 import { ContentThumbnail } from "@/components/content-thumbnail";
 import { MemberAvatar } from "@/components/member-avatar";
-import { MostActiveBadge } from "@/components/most-active-badge";
+import {
+  MostActiveBadge,
+  type ActivityRank,
+} from "@/components/most-active-badge";
 import {
   type ContentStatus,
   type ContentType,
@@ -157,12 +160,13 @@ export default async function ContentDetailsPage({
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
   const messages = (messageRows ?? []) as unknown as ContentMessage[];
   const ratings = (ratingRows ?? []) as unknown as ContentRating[];
-  const topMember = Array.isArray(mostActiveResult.data)
-    ? mostActiveResult.data[0] as { member_id: string; activity_score: number | string } | undefined
-    : undefined;
-  const mostActiveMemberId = topMember && Number(topMember.activity_score) > 0
-    ? topMember.member_id
-    : null;
+  const activityRanks = new Map<string, ActivityRank>(
+    (Array.isArray(mostActiveResult.data) ? mostActiveResult.data : [])
+      .slice(0, 3)
+      .flatMap((member, index) => Number(member.activity_score) > 0
+        ? [[member.member_id, (index + 1) as ActivityRank] as const]
+        : []),
+  );
   const reviews: ContentReview[] = ratings.map((rating) => ({
     id: rating.id,
     rating: rating.rating,
@@ -170,7 +174,7 @@ export default async function ContentDetailsPage({
     updatedAt: rating.updated_at,
     memberName: rating.author?.name ?? "Membro",
     avatarUrl: rating.author?.avatar_url ?? null,
-    isMostActive: rating.user_id === mostActiveMemberId,
+    activityRank: activityRanks.get(rating.user_id) ?? null,
   }));
   const currentUserRating = ratings.find((rating) => rating.user_id === authData.user?.id);
   const totalMessagePages = Math.max(1, Math.ceil((messageCount ?? 0) / MESSAGES_PER_PAGE));
@@ -196,7 +200,9 @@ export default async function ContentDetailsPage({
                 <dt>Indicado por</dt>
                 <dd className="flex flex-wrap items-center justify-end gap-2 font-medium text-(--foreground)">
                   <span>{content.creator?.name ?? "Membro"}</span>
-                  {content.created_by === mostActiveMemberId ? <MostActiveBadge /> : null}
+                  {activityRanks.get(content.created_by) ? (
+                    <MostActiveBadge position={activityRanks.get(content.created_by)!} />
+                  ) : null}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
@@ -435,7 +441,9 @@ export default async function ContentDetailsPage({
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-(--muted)">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-(--foreground)">{message.author?.name ?? "Membro"}</span>
-                          {message.user_id === mostActiveMemberId ? <MostActiveBadge /> : null}
+                          {activityRanks.get(message.user_id) ? (
+                            <MostActiveBadge position={activityRanks.get(message.user_id)!} />
+                          ) : null}
                         </div>
                         <time dateTime={message.created_at}>
                           {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}

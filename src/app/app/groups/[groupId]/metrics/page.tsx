@@ -47,7 +47,7 @@ function RankBadge({ position }: { position: number }) {
     <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black shadow-md ${
       medalStyles[position - 1] ?? "bg-[#b9c1d1] text-[#252b38]"
     }`}>
-      {position}
+      {position}º
     </span>
   );
 }

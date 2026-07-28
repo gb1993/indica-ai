@@ -5,7 +5,10 @@ import { ActionForm } from "@/components/action-form";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { InvitationForm } from "@/components/invitation-form";
 import { MemberAvatar } from "@/components/member-avatar";
-import { MostActiveBadge } from "@/components/most-active-badge";
+import {
+  MostActiveBadge,
+  type ActivityRank,
+} from "@/components/most-active-badge";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -59,12 +62,13 @@ export default async function GroupMembersPage({
   if (!group || !ownMembership) notFound();
   const isOwner = ownMembership.role === "owner";
   const members = (memberRows ?? []) as unknown as Member[];
-  const topMember = Array.isArray(mostActiveResult.data)
-    ? mostActiveResult.data[0] as { member_id: string; activity_score: number | string } | undefined
-    : undefined;
-  const mostActiveMemberId = topMember && Number(topMember.activity_score) > 0
-    ? topMember.member_id
-    : null;
+  const activityRanks = new Map<string, ActivityRank>(
+    (Array.isArray(mostActiveResult.data) ? mostActiveResult.data : [])
+      .slice(0, 3)
+      .flatMap((member, index) => Number(member.activity_score) > 0
+        ? [[member.member_id, (index + 1) as ActivityRank] as const]
+        : []),
+  );
 
   let invitations: Invitation[] = [];
   if (isOwner) {
@@ -95,7 +99,11 @@ export default async function GroupMembersPage({
 
       <section className="app-panel overflow-hidden">
         <ul className="divide-y">
-          {members.map((member) => (
+          {members.map((member) => {
+            const activityRank = member.user
+              ? activityRanks.get(member.user.id) ?? null
+              : null;
+            return (
             <li key={member.id} className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
                 <MemberAvatar
@@ -105,7 +113,7 @@ export default async function GroupMembersPage({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="truncate font-semibold">{member.user?.name ?? "Usuário"}</p>
-                    {member.user?.id === mostActiveMemberId ? <MostActiveBadge /> : null}
+                    {activityRank ? <MostActiveBadge position={activityRank} /> : null}
                     <span className="rounded-full bg-(--surface-muted) px-2 py-0.5 text-xs text-(--muted)">{member.role === "owner" ? "Proprietário" : "Membro"}</span>
                   </div>
                   <p className="truncate text-sm text-(--muted)">{member.user?.email}</p>
@@ -124,7 +132,8 @@ export default async function GroupMembersPage({
                 </ActionForm>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
 

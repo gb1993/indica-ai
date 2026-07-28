@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import { Carousel } from "./carousel";
 import { MemberAvatar } from "./member-avatar";
-import { MostActiveBadge } from "./most-active-badge";
+import { MostActiveBadge, type ActivityRank } from "./most-active-badge";
 
 export type ContentReview = {
   id: string;
@@ -13,7 +13,7 @@ export type ContentReview = {
   updatedAt: string;
   memberName: string;
   avatarUrl: string | null;
-  isMostActive: boolean;
+  activityRank: ActivityRank | null;
 };
 
 function ReviewCard({ review }: { review: ContentReview }) {
@@ -32,7 +32,7 @@ function ReviewCard({ review }: { review: ContentReview }) {
         <MemberAvatar name={review.memberName} avatarUrl={review.avatarUrl} size="sm" />
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <p className="truncate font-bold">{review.memberName}</p>
-          {review.isMostActive ? <MostActiveBadge /> : null}
+          {review.activityRank ? <MostActiveBadge position={review.activityRank} /> : null}
         </div>
       </div>
       <p className={`mt-3 line-clamp-3 text-sm leading-relaxed ${review.comment ? "" : "italic text-(--muted)"}`}>
