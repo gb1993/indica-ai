@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { ActionForm } from "@/components/action-form";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { InvitationForm } from "@/components/invitation-form";
+import { MemberAvatar } from "@/components/member-avatar";
+import { MostActiveBadge } from "@/components/most-active-badge";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -49,14 +50,21 @@ export default async function GroupMembersPage({
   const { groupId } = await params;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: ownMembership }, { data: memberRows }] = await Promise.all([
+  const [{ data: group }, { data: ownMembership }, { data: memberRows }, mostActiveResult] = await Promise.all([
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
     supabase.from("group_members").select("id, role, joined_at, user:profiles!group_members_user_id_fkey(id, name, email, avatar_url)").eq("group_id", groupId).eq("status", "active").order("joined_at"),
+    supabase.rpc("get_group_most_active_members", { p_group_id: groupId }),
   ]);
   if (!group || !ownMembership) notFound();
   const isOwner = ownMembership.role === "owner";
   const members = (memberRows ?? []) as unknown as Member[];
+  const topMember = Array.isArray(mostActiveResult.data)
+    ? mostActiveResult.data[0] as { member_id: string; activity_score: number | string } | undefined
+    : undefined;
+  const mostActiveMemberId = topMember && Number(topMember.activity_score) > 0
+    ? topMember.member_id
+    : null;
 
   let invitations: Invitation[] = [];
   if (isOwner) {
@@ -90,23 +98,14 @@ export default async function GroupMembersPage({
           {members.map((member) => (
             <li key={member.id} className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3">
-                {member.user?.avatar_url ? (
-                  <Image
-                    src={member.user.avatar_url}
-                    alt={`Foto de ${member.user.name}`}
-                    width={42}
-                    height={42}
-                    className="size-10.5 shrink-0 rounded-full object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <span className="grid size-10.5 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#6d28d9,#c084fc)] text-sm font-bold text-white">
-                    {(member.user?.name ?? "U").trim().charAt(0).toUpperCase()}
-                  </span>
-                )}
+                <MemberAvatar
+                  name={member.user?.name ?? "Usuário"}
+                  avatarUrl={member.user?.avatar_url ?? null}
+                />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="truncate font-semibold">{member.user?.name ?? "Usuário"}</p>
+                    {member.user?.id === mostActiveMemberId ? <MostActiveBadge /> : null}
                     <span className="rounded-full bg-(--surface-muted) px-2 py-0.5 text-xs text-(--muted)">{member.role === "owner" ? "Proprietário" : "Membro"}</span>
                   </div>
                   <p className="truncate text-sm text-(--muted)">{member.user?.email}</p>
