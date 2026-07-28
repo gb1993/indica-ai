@@ -6,12 +6,15 @@ import { ActionForm } from "@/components/action-form";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentStatusBadge, ContentTypeBadge } from "@/components/content-badges";
 import { ContentForm } from "@/components/content-form";
+import { ContentMessageActions } from "@/components/content-message-actions";
 import { ContentRatingForm } from "@/components/content-rating-form";
 import {
   ContentReviews,
   type ContentReview,
 } from "@/components/content-reviews";
 import { ContentThumbnail } from "@/components/content-thumbnail";
+import { MemberAvatar } from "@/components/member-avatar";
+import { MostActiveBadge } from "@/components/most-active-badge";
 import {
   type ContentStatus,
   type ContentType,
@@ -23,10 +26,8 @@ import { createClient } from "@/lib/supabase/server";
 import {
   completeContent,
   createContentMessage,
-  deleteContentMessage,
   deleteContent,
   setContentVote,
-  updateContentMessage,
   type ContentRatingSummary,
   type ContentVoteSummary,
 } from "../actions";
@@ -48,7 +49,7 @@ type ContentDetails = {
   completed_at: string | null;
   completed_by: string | null;
   created_at: string;
-  creator: { name: string } | null;
+  creator: { name: string; avatar_url: string | null } | null;
   completer: { name: string } | null;
 };
 
@@ -59,7 +60,7 @@ type ContentMessage = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  author: { name: string } | null;
+  author: { name: string; avatar_url: string | null } | null;
 };
 
 type ContentRating = {
@@ -68,7 +69,7 @@ type ContentRating = {
   rating: number;
   comment: string | null;
   updated_at: string;
-  author: { name: string } | null;
+  author: { name: string; avatar_url: string | null } | null;
 };
 
 const MESSAGES_PER_PAGE = 10;
@@ -93,11 +94,12 @@ export default async function ContentDetailsPage({
     ratingSummaryResult,
     { data: ratingRows, error: ratingsError },
     { data: messageRows, count: messageCount, error: messagesError },
+    mostActiveResult,
   ] = await Promise.all([
     supabase.from("groups").select("id, name").eq("id", groupId).single(),
     supabase
       .from("contents")
-      .select("id, group_id, created_by, type, title, description, thumbnail_url, trailer_url, tmdb_id, tmdb_media_type, status, completed_at, completed_by, created_at, creator:profiles!contents_created_by_fkey(name), completer:profiles!contents_completed_by_fkey(name)")
+      .select("id, group_id, created_by, type, title, description, thumbnail_url, trailer_url, tmdb_id, tmdb_media_type, status, completed_at, completed_by, created_at, creator:profiles!contents_created_by_fkey(name, avatar_url), completer:profiles!contents_completed_by_fkey(name)")
       .eq("id", contentId)
       .eq("group_id", groupId)
       .single(),
@@ -109,15 +111,16 @@ export default async function ContentDetailsPage({
     }),
     supabase
       .from("content_ratings")
-      .select("id, user_id, rating, comment, updated_at, author:profiles!content_ratings_user_id_fkey(name)")
+      .select("id, user_id, rating, comment, updated_at, author:profiles!content_ratings_user_id_fkey(name, avatar_url)")
       .eq("content_id", contentId)
       .order("updated_at", { ascending: false }),
     supabase
       .from("content_messages")
-      .select("id, user_id, content, created_at, updated_at, deleted_at, author:profiles!content_messages_user_id_fkey(name)", { count: "exact" })
+      .select("id, user_id, content, created_at, updated_at, deleted_at, author:profiles!content_messages_user_id_fkey(name, avatar_url)", { count: "exact" })
       .eq("content_id", contentId)
       .order("created_at", { ascending: false })
       .range(messagesFrom, messagesFrom + MESSAGES_PER_PAGE - 1),
+    supabase.rpc("get_group_most_active_members", { p_group_id: groupId }),
   ]);
 
   if (!group || !contentRow) notFound();
@@ -154,12 +157,20 @@ export default async function ContentDetailsPage({
   const canManage = content.status === "pending" && content.created_by === authData.user?.id;
   const messages = (messageRows ?? []) as unknown as ContentMessage[];
   const ratings = (ratingRows ?? []) as unknown as ContentRating[];
+  const topMember = Array.isArray(mostActiveResult.data)
+    ? mostActiveResult.data[0] as { member_id: string; activity_score: number | string } | undefined
+    : undefined;
+  const mostActiveMemberId = topMember && Number(topMember.activity_score) > 0
+    ? topMember.member_id
+    : null;
   const reviews: ContentReview[] = ratings.map((rating) => ({
     id: rating.id,
     rating: rating.rating,
     comment: rating.comment,
     updatedAt: rating.updated_at,
     memberName: rating.author?.name ?? "Membro",
+    avatarUrl: rating.author?.avatar_url ?? null,
+    isMostActive: rating.user_id === mostActiveMemberId,
   }));
   const currentUserRating = ratings.find((rating) => rating.user_id === authData.user?.id);
   const totalMessagePages = Math.max(1, Math.ceil((messageCount ?? 0) / MESSAGES_PER_PAGE));
@@ -183,7 +194,10 @@ export default async function ContentDetailsPage({
             <dl className="mt-7 space-y-2 border-t pt-5 text-sm text-(--muted)">
               <div className="flex justify-between gap-4">
                 <dt>Indicado por</dt>
-                <dd className="font-medium text-(--foreground)">{content.creator?.name ?? "Membro"}</dd>
+                <dd className="flex flex-wrap items-center justify-end gap-2 font-medium text-(--foreground)">
+                  <span>{content.creator?.name ?? "Membro"}</span>
+                  {content.created_by === mostActiveMemberId ? <MostActiveBadge /> : null}
+                </dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt>Cadastrado em</dt>
@@ -412,50 +426,38 @@ export default async function ContentDetailsPage({
                 const wasEdited = !message.deleted_at
                   && new Date(message.updated_at).getTime() > new Date(message.created_at).getTime();
                 return (
-                  <li key={message.id} className="rounded-2xl border bg-(--surface-muted) p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-(--muted)">
-                      <span className="font-semibold text-(--foreground)">{message.author?.name ?? "Membro"}</span>
-                      <time dateTime={message.created_at}>
-                        {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
-                      </time>
+                  <li key={message.id} className="flex gap-3 rounded-2xl border bg-(--surface-muted) p-4">
+                    <MemberAvatar
+                      name={message.author?.name ?? "Membro"}
+                      avatarUrl={message.author?.avatar_url ?? null}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-(--muted)">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-(--foreground)">{message.author?.name ?? "Membro"}</span>
+                          {message.user_id === mostActiveMemberId ? <MostActiveBadge /> : null}
+                        </div>
+                        <time dateTime={message.created_at}>
+                          {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
+                        </time>
+                      </div>
+                      {message.deleted_at ? (
+                        <p className="mt-3 italic text-(--muted)">Mensagem removida</p>
+                      ) : (
+                        <>
+                          <p className="mt-3 whitespace-pre-wrap wrap-break-word">{message.content}</p>
+                          {wasEdited ? <p className="mt-2 text-xs text-(--muted)">Editada</p> : null}
+                          {isAuthor ? (
+                            <ContentMessageActions
+                              groupId={groupId}
+                              contentId={content.id}
+                              messageId={message.id}
+                              content={message.content}
+                            />
+                          ) : null}
+                        </>
+                      )}
                     </div>
-                    {message.deleted_at ? (
-                      <p className="mt-3 italic text-(--muted)">Mensagem removida</p>
-                    ) : (
-                      <>
-                        <p className="mt-3 whitespace-pre-wrap wrap-break-word">{message.content}</p>
-                        {wasEdited ? <p className="mt-2 text-xs text-(--muted)">Editada</p> : null}
-                        {isAuthor ? (
-                          <div className="mt-4 grid gap-3 border-t pt-4 md:grid-cols-[1fr_auto]">
-                            <ActionForm
-                              action={updateContentMessage}
-                              submitLabel="Salvar edição"
-                              pendingLabel="Salvando…"
-                              className="space-y-2"
-                              buttonClassName="rounded-lg border bg-(--surface) px-3 py-2 text-sm font-semibold disabled:opacity-60"
-                            >
-                              <input type="hidden" name="groupId" value={groupId} />
-                              <input type="hidden" name="contentId" value={content.id} />
-                              <input type="hidden" name="messageId" value={message.id} />
-                              <label htmlFor={`message-${message.id}`} className="sr-only">Editar mensagem</label>
-                              <textarea id={`message-${message.id}`} name="content" required maxLength={2000} rows={2} defaultValue={message.content} className="app-input resize-y text-sm" />
-                            </ActionForm>
-                            <ActionForm
-                              action={deleteContentMessage}
-                              submitLabel="Excluir"
-                              pendingLabel="Excluindo…"
-                              confirmMessage="Excluir esta mensagem? Ela continuará aparecendo como removida."
-                              className="space-y-2"
-                              buttonClassName="rounded-lg px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-60"
-                            >
-                              <input type="hidden" name="groupId" value={groupId} />
-                              <input type="hidden" name="contentId" value={content.id} />
-                              <input type="hidden" name="messageId" value={message.id} />
-                            </ActionForm>
-                          </div>
-                        ) : null}
-                      </>
-                    )}
                   </li>
                 );
               })}

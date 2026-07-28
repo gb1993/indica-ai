@@ -7,12 +7,17 @@ import {
   useSyncExternalStore,
 } from "react";
 
+import { MemberAvatar } from "./member-avatar";
+import { MostActiveBadge } from "./most-active-badge";
+
 export type ContentReview = {
   id: string;
   rating: number;
   comment: string | null;
   updatedAt: string;
   memberName: string;
+  avatarUrl: string | null;
+  isMostActive: boolean;
 };
 
 function subscribeToDesktop(callback: () => void) {
@@ -47,7 +52,13 @@ function ReviewCard({ review }: { review: ContentReview }) {
           <span className="text-(--border)">{"★".repeat(5 - review.rating)}</span>
         </span>
       </p>
-      <p className="mt-3 font-bold">{review.memberName}</p>
+      <div className="mt-3 flex items-center gap-3">
+        <MemberAvatar name={review.memberName} avatarUrl={review.avatarUrl} size="sm" />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="truncate font-bold">{review.memberName}</p>
+          {review.isMostActive ? <MostActiveBadge /> : null}
+        </div>
+      </div>
       <p className={`mt-3 line-clamp-3 text-sm leading-relaxed ${review.comment ? "" : "italic text-(--muted)"}`}>
         {review.comment ?? "Sem comentário."}
       </p>
