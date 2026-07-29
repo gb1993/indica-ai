@@ -28,11 +28,17 @@ export function RankingBadge({
 
   return (
     <span
-      className="relative inline-block size-8 shrink-0 overflow-hidden rounded-full border border-white/70 bg-white shadow-md"
+      className="relative inline-block size-8 shrink-0"
       title={label}
       aria-label={label}
     >
-      <Image src={image} alt="" fill sizes="32px" className="object-cover" />
+      <Image
+        src={image}
+        alt=""
+        fill
+        sizes="32px"
+        className="object-contain drop-shadow-sm"
+      />
     </span>
   );
 }
