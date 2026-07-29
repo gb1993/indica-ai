@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { LocalDateTime } from "./local-date-time";
+
 export type GroupCardData = {
   id: string;
   name: string;
@@ -28,7 +30,14 @@ export function GroupCard({ group }: { group: GroupCardData }) {
       <div className="mt-4 text-xs text-(--muted)">
         <p className="font-semibold text-(--foreground)">Última atividade</p>
         {group.lastActivity ? (
-          <p className="mt-1 line-clamp-2">{group.lastActivity.label} · {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(group.lastActivity.createdAt))}</p>
+          <p className="mt-1 line-clamp-2">
+            {group.lastActivity.label} ·{" "}
+            <LocalDateTime
+              value={group.lastActivity.createdAt}
+              dateStyle="short"
+              timeStyle="short"
+            />
+          </p>
         ) : <p className="mt-1">Nenhuma atividade registrada.</p>}
       </div>
     </Link>
