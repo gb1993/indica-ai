@@ -38,7 +38,7 @@ type DiscussedContent = {
 };
 
 function RankBadge({ position }: { position: number }) {
-  return <RankingBadge position={position} />;
+  return <RankingBadge position={position} size={32} />;
 }
 
 function MemberInitial({ name }: { name: string }) {
