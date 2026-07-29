@@ -5,17 +5,12 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const themeBootScript = `
-  (function () {
-    try {
-      var savedTheme = localStorage.getItem('indica-ai-theme');
-      var isDark = savedTheme !== 'light';
-      document.documentElement.classList.toggle('dark', isDark);
-      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-    } catch (_) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
-    }
-  })();
+  try {
+    document.documentElement.classList.toggle(
+      "dark",
+      localStorage.getItem("indica-ai-theme") !== "light"
+    );
+  } catch {}
 `;
 
 export const metadata: Metadata = {

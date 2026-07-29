@@ -13,7 +13,6 @@ export function ThemeToggle({ showLabel = false }: { showLabel?: boolean }) {
       : "dark";
     localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     document.documentElement.classList.toggle("dark", nextTheme === "dark");
-    document.documentElement.style.colorScheme = nextTheme;
   }
 
   return (
