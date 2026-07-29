@@ -1,6 +1,6 @@
 # Indica Aí
 
-Aplicação privada para grupos de amigos indicarem, votarem, avaliarem e conversarem sobre filmes, séries e documentários.
+Aplicação privada para grupos de amigos indicarem, avaliarem e conversarem sobre filmes, séries e documentários.
 
 ## Tecnologias
 
@@ -234,7 +234,7 @@ npm run typecheck
 npm run build
 ```
 
-`test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo, upload de avatar e conteúdo textual dos convites, falhando se linhas, funções ou branches ficarem abaixo de 70%. `test:all` combina essa verificação com os testes de banco. O `test:db` exige a stack local do Supabase e o Docker Desktop ativo. As suítes pgTAP cobrem RLS, Storage de avatares, grupos, convites de uso único, rastreamento do envio de convites, autoria, conteúdo opcional e inválido, votação/maioria, conclusão, avaliações, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e votação quando requisições concorrentes chegam ao banco.
+`test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo, upload de avatar e conteúdo textual dos convites, falhando se linhas, funções ou branches ficarem abaixo de 70%. `test:all` combina essa verificação com os testes de banco. O `test:db` exige a stack local do Supabase e o Docker Desktop ativo. As suítes pgTAP cobrem RLS, Storage de avatares, grupos, convites de uso único, rastreamento do envio de convites, autoria, conteúdo opcional e inválido, conclusão automática na primeira avaliação, mensagens e atividades. As constraints únicas e os bloqueios `FOR UPDATE` protegem os fluxos de convite e avaliação quando requisições concorrentes chegam ao banco.
 
 ## CI no GitHub e deploy pelo Supabase
 

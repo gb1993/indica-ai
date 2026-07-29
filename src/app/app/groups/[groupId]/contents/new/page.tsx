@@ -28,7 +28,7 @@ export default async function NewContentPage({
       <section className="app-panel mt-6 p-7 sm:p-9">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-(--accent-strong)">Nova indicação</p>
         <h1 className="text-3xl font-bold tracking-tight">Indicar novo conteúdo</h1>
-        <p className="mt-2 text-sm text-(--muted)">A indicação ficará aguardando aprovação.</p>
+        <p className="mt-2 text-sm text-(--muted)">A indicação ficará disponível para avaliação imediatamente.</p>
         <div className="mt-7">
           <ContentForm groupId={groupId} />
         </div>

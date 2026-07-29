@@ -39,9 +39,6 @@ values
   ('97300000-0000-0000-0000-000000000001', '97100000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001', 'movie', 'Conteúdo em cascata', null, null, null),
   ('97300000-0000-0000-0000-000000000002', '97100000-0000-0000-0000-000000000002', '97000000-0000-0000-0000-000000000001', 'series', 'Conteúdo direto', null, null, null);
 
-insert into public.content_votes (content_id, user_id, vote)
-values ('97300000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001', true);
-
 insert into public.content_ratings (content_id, user_id, rating)
 values ('97300000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001', 5);
 
@@ -80,12 +77,11 @@ select is(
 select is(
   (
     select
-      (select count(*) from public.content_votes where content_id = '97300000-0000-0000-0000-000000000001')
-      + (select count(*) from public.content_ratings where content_id = '97300000-0000-0000-0000-000000000001')
+      (select count(*) from public.content_ratings where content_id = '97300000-0000-0000-0000-000000000001')
       + (select count(*) from public.content_messages where content_id = '97300000-0000-0000-0000-000000000001')
   )::integer,
   0,
-  'votos, avaliações e mensagens são excluídos em cascata'
+  'avaliações e mensagens são excluídas em cascata'
 );
 
 select is(

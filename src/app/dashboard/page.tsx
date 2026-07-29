@@ -23,7 +23,6 @@ function activityLabel(eventType: string) {
     content_created: "Conteúdo criado",
     content_updated: "Conteúdo atualizado",
     content_deleted: "Conteúdo excluído",
-    content_approved: "Conteúdo aprovado",
     content_completed: "Conteúdo concluído",
     rating_created: "Avaliação criada",
     rating_updated: "Avaliação alterada",
@@ -51,11 +50,11 @@ export default async function DashboardPage() {
 
   const memberCounts = new Map<string, number>();
   for (const member of membersResult.data ?? []) memberCounts.set(member.group_id, (memberCounts.get(member.group_id) ?? 0) + 1);
-  const contentCounts = new Map<string, { pending: number; approved: number }>();
+  const contentCounts = new Map<string, { pending: number; completed: number }>();
   for (const content of contentsResult.data ?? []) {
-    const current = contentCounts.get(content.group_id) ?? { pending: 0, approved: 0 };
+    const current = contentCounts.get(content.group_id) ?? { pending: 0, completed: 0 };
     if (content.status === "pending") current.pending += 1;
-    if (content.status === "approved") current.approved += 1;
+    if (content.status === "completed") current.completed += 1;
     contentCounts.set(content.group_id, current);
   }
   const lastActivities = new Map<string, { label: string; createdAt: string }>();
@@ -67,13 +66,13 @@ export default async function DashboardPage() {
 
   const groups = memberships.flatMap(({ group, role }): GroupCardData[] => {
     if (!group) return [];
-    const counts = contentCounts.get(group.id) ?? { pending: 0, approved: 0 };
+    const counts = contentCounts.get(group.id) ?? { pending: 0, completed: 0 };
     return [{
       ...group,
       role,
       memberCount: memberCounts.get(group.id) ?? 0,
-      pendingCount: counts.pending,
-      approvedCount: counts.approved,
+      availableCount: counts.pending,
+      completedCount: counts.completed,
       lastActivity: lastActivities.get(group.id) ?? null,
     }];
   });

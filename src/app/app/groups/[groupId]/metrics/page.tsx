@@ -24,7 +24,6 @@ type ActiveMember = {
   member_id: string;
   name: string;
   content_count: number;
-  vote_count: number;
   rating_count: number;
   message_count: number;
   activity_score: number;
@@ -215,7 +214,7 @@ export default async function GroupMetricsPage({
                 <p className="mt-1 text-sm text-(--muted)">Ranking de participação dos membros do grupo.</p>
               </div>
               <p className="max-w-md text-xs leading-relaxed text-(--muted) sm:text-right">
-                Cada conteúdo, voto, avaliação e mensagem soma um ponto.
+                Cada conteúdo, avaliação e mensagem soma um ponto.
               </p>
             </div>
 
@@ -227,7 +226,6 @@ export default async function GroupMetricsPage({
                       <th className="px-5 py-3">Posição</th>
                       <th className="px-4 py-3">Membro</th>
                       <th className="px-4 py-3 text-center">Conteúdos</th>
-                      <th className="px-4 py-3 text-center">Votos</th>
                       <th className="px-4 py-3 text-center">Avaliações</th>
                       <th className="px-4 py-3 text-center">Mensagens</th>
                       <th className="px-5 py-3 text-right text-(--gold)">Total de pontos</th>
@@ -246,7 +244,6 @@ export default async function GroupMetricsPage({
                           </span>
                         </td>
                         <td className="border-t px-4 py-3 text-center">{member.content_count}</td>
-                        <td className="border-t px-4 py-3 text-center">{member.vote_count}</td>
                         <td className="border-t px-4 py-3 text-center">{member.rating_count}</td>
                         <td className="border-t px-4 py-3 text-center">{member.message_count}</td>
                         <td className="border-t px-5 py-3 text-right text-base font-black text-(--gold)">{member.activity_score}</td>

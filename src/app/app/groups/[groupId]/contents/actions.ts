@@ -23,17 +23,7 @@ import {
   tmdbSearchSchema,
   tmdbSelectionSchema,
   uuidSchema,
-  voteSchema,
 } from "@/lib/validation";
-
-export type ContentVoteSummary = {
-  favorable_votes: number;
-  contrary_votes: number;
-  active_members: number;
-  current_user_vote: boolean | null;
-  favorable_votes_needed: number;
-  content_status: "pending" | "approved" | "completed";
-};
 
 export type ContentRatingSummary = {
   average_rating: number | null;
@@ -270,71 +260,6 @@ export async function deleteContent(
   redirect(`/app/groups/${groupId.data}`);
 }
 
-export async function setContentVote(
-  _previousState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const parsed = voteSchema.safeParse({
-    groupId: formString(formData, "groupId"),
-    contentId: formString(formData, "contentId"),
-    vote: formString(formData, "vote"),
-  });
-  if (!parsed.success) return actionError("Voto inválido.");
-
-  const supabase = await createClient();
-  const { data: status, error } = await supabase.rpc("set_content_vote", {
-    p_content_id: parsed.data.contentId,
-    p_vote: parsed.data.vote,
-  });
-
-  if (error || !status) {
-    return actionError("Não foi possível registrar o voto. A votação pode já estar encerrada.");
-  }
-
-  revalidatePath(`/app/groups/${parsed.data.groupId}`);
-  revalidatePath(`/app/groups/${parsed.data.groupId}/contents/${parsed.data.contentId}`);
-  return {
-    status: "success",
-    message: status === "approved"
-      ? "Voto registrado. O conteúdo foi aprovado."
-      : "Voto registrado.",
-  };
-}
-
-export async function getContentVoteSummary(contentId: string): Promise<ContentVoteSummary | null> {
-  const parsed = uuidSchema.safeParse(contentId);
-  if (!parsed.success) return null;
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_content_vote_summary", {
-    p_content_id: parsed.data,
-  });
-  if (error || !Array.isArray(data) || !data[0]) return null;
-
-  return data[0] as ContentVoteSummary;
-}
-
-export async function completeContent(
-  _previousState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const groupId = uuidSchema.safeParse(formString(formData, "groupId"));
-  const contentId = uuidSchema.safeParse(formString(formData, "contentId"));
-  if (!groupId.success || !contentId.success) return actionError("Conteúdo inválido.");
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("complete_content", {
-    p_content_id: contentId.data,
-  });
-  if (error) {
-    return actionError("Não foi possível concluir o conteúdo. Ele precisa estar aprovado.");
-  }
-
-  revalidatePath(`/app/groups/${groupId.data}`);
-  revalidatePath(`/app/groups/${groupId.data}/contents/${contentId.data}`);
-  return { status: "success", message: "Conteúdo marcado como concluído." };
-}
-
 export async function setContentRating(
   _previousState: ActionState,
   formData: FormData,
@@ -354,7 +279,7 @@ export async function setContentRating(
     p_comment: parsed.data.comment || null,
   });
   if (error) {
-    return actionError("Não foi possível registrar a avaliação. O conteúdo precisa estar concluído.");
+    return actionError("Não foi possível registrar a avaliação.");
   }
 
   revalidatePath(`/app/groups/${parsed.data.groupId}`);

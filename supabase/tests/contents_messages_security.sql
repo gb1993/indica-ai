@@ -93,7 +93,9 @@ select is(
 );
 
 update public.contents
-set status = 'approved'
+set status = 'completed',
+    completed_at = now(),
+    completed_by = '71000000-0000-0000-0000-000000000001'
 where id = '74000000-0000-0000-0000-000000000001';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000001', true);
@@ -104,7 +106,7 @@ reset role;
 select is(
   (select title from public.contents where id = '74000000-0000-0000-0000-000000000001'),
   'Título alterado',
-  'conteúdo aprovado fica bloqueado para edição'
+  'conteúdo concluído fica bloqueado para edição'
 );
 
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000001', true);

@@ -40,7 +40,6 @@ function activityDescription(activity: Activity) {
     case "content_created": return `criou o conteúdo${target}`;
     case "content_updated": return `atualizou o conteúdo${target}`;
     case "content_deleted": return `excluiu o conteúdo${target}`;
-    case "content_approved": return `aprovou o conteúdo${target}`;
     case "content_completed": return `marcou o conteúdo${target} como concluído`;
     case "rating_created": return `avaliou um conteúdo com ${Number(activity.metadata.rating) || "—"} de 5`;
     case "rating_updated": return `alterou uma avaliação para ${Number(activity.metadata.rating) || "—"} de 5`;
