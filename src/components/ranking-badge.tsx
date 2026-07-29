@@ -9,16 +9,19 @@ const rankingImages = {
 export function RankingBadge({
   position,
   label = `${position}º lugar`,
+  size = 24,
 }: {
   position: number;
   label?: string;
+  size?: 24 | 32;
 }) {
   const image = rankingImages[position as keyof typeof rankingImages];
+  const sizeClass = size === 32 ? "size-8" : "size-6";
 
   if (!image) {
     return (
       <span
-        className="grid size-8 shrink-0 place-items-center rounded-full bg-(--surface-muted) text-xs font-black text-(--muted)"
+        className={`grid ${sizeClass} shrink-0 place-items-center rounded-full bg-(--surface-muted) text-xs font-black text-(--muted)`}
         aria-label={label}
       >
         {position}
@@ -28,15 +31,15 @@ export function RankingBadge({
 
   return (
     <span
-      className="relative inline-block size-8 shrink-0"
+      className={`relative inline-block ${sizeClass} shrink-0`}
       title={label}
       aria-label={label}
     >
       <Image
         src={image}
-        alt=""
+        alt={`icone ${label}`}
         fill
-        sizes="32px"
+        sizes={`${size}px`}
         className="object-contain drop-shadow-sm"
       />
     </span>

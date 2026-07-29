@@ -32,7 +32,7 @@ export function Carousel({
   const slides = useMemo(() => Array.isArray(children) ? children : [children], [children]);
   const [autoplayPlugin] = useState(() => Autoplay({
     delay: autoplayDelay,
-    playOnInit: autoplay,
+    playOnInit: false,
     stopOnInteraction: false,
     stopOnMouseEnter: true,
   }));
@@ -44,6 +44,7 @@ export function Carousel({
     { align: "start", containScroll: "trimSnaps", loop },
     plugins,
   );
+  const autoplayApi = emblaApi?.plugins().autoplay;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -70,30 +71,35 @@ export function Carousel({
   }, [emblaApi, updateControls]);
 
   useEffect(() => {
-    if (!autoplay) return;
+    if (!autoplay || !autoplayApi || scrollSnaps.length <= 1) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncAutoplay = () => {
-      if (reducedMotion.matches) autoplayPlugin.stop();
-      else autoplayPlugin.play();
+      if (reducedMotion.matches) autoplayApi.stop();
+      else autoplayApi.play();
     };
     syncAutoplay();
     reducedMotion.addEventListener("change", syncAutoplay);
-    return () => reducedMotion.removeEventListener("change", syncAutoplay);
-  }, [autoplay, autoplayPlugin]);
+    return () => {
+      reducedMotion.removeEventListener("change", syncAutoplay);
+      autoplayApi.stop();
+    };
+  }, [autoplay, autoplayApi, scrollSnaps.length]);
 
   return (
     <div
       role="region"
       aria-roledescription="carrossel"
       aria-label={ariaLabel}
-      onFocusCapture={() => autoplayPlugin.stop()}
+      onFocusCapture={() => autoplayApi?.stop()}
       onBlurCapture={(event) => {
         if (
           autoplay
+          && autoplayApi
+          && scrollSnaps.length > 1
           && !event.currentTarget.contains(event.relatedTarget as Node | null)
           && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ) {
-          autoplayPlugin.play();
+          autoplayApi.play();
         }
       }}
     >
