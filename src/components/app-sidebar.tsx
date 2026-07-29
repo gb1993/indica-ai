@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/app/dashboard/theme-toggle";
 
 import { AppIcon, type AppIconName } from "./app-icon";
+import { BrandLogo } from "./brand-logo";
 
 type SidebarGroup = {
   id: string;
@@ -34,9 +35,7 @@ const primaryLinks: Array<{ href: string; label: string; icon: AppIconName; isNe
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className={`flex items-center gap-3 ${compact ? "" : "h-[4.55rem] border-b px-5"}`}>
-      <span className={`grid place-items-center rounded-xl bg-[linear-gradient(145deg,#f7c94b,#8b5cf6)] text-white shadow-lg shadow-violet-950/25 ${compact ? "size-8" : "size-9"}`}>
-        <AppIcon name="clapper" className="size-5" />
-      </span>
+      <BrandLogo size={compact ? 32 : 36} decorative priority />
       <span className={`bg-[linear-gradient(90deg,#ddd6fe,#a78bfa)] bg-clip-text font-black tracking-[0.08em] text-transparent ${compact ? "text-base" : "text-lg"}`}>
         INDICA AÍ
       </span>
@@ -106,7 +105,7 @@ function SidebarContent({
 
         <div className="my-5 border-t" />
         <div className="mb-2 flex items-center justify-between px-3">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-white">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-(--muted)">
             Meus grupos
           </p>
           <span className="text-xs text-(--muted)">{groups.length}</span>

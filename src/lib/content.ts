@@ -5,7 +5,7 @@ export const CONTENT_TYPES = [
 ] as const;
 
 export type ContentType = (typeof CONTENT_TYPES)[number];
-export type ContentStatus = "pending" | "approved" | "completed";
+export type ContentStatus = "pending" | "completed";
 
 export const CONTENT_TYPE_META: Record<ContentType, { label: string }> = {
   movie: { label: "Filme" },
@@ -14,8 +14,7 @@ export const CONTENT_TYPE_META: Record<ContentType, { label: string }> = {
 };
 
 export const CONTENT_STATUS_META: Record<ContentStatus, { label: string }> = {
-  pending: { label: "Aguardando aprovação" },
-  approved: { label: "Próximo" },
+  pending: { label: "Disponível para avaliar" },
   completed: { label: "Concluído" },
 };
 

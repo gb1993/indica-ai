@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AppIcon } from "@/components/app-icon";
+import { LocalDateTime } from "@/components/local-date-time";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Atividades do grupo" };
@@ -40,7 +41,6 @@ function activityDescription(activity: Activity) {
     case "content_created": return `criou o conteúdo${target}`;
     case "content_updated": return `atualizou o conteúdo${target}`;
     case "content_deleted": return `excluiu o conteúdo${target}`;
-    case "content_approved": return `aprovou o conteúdo${target}`;
     case "content_completed": return `marcou o conteúdo${target} como concluído`;
     case "rating_created": return `avaliou um conteúdo com ${Number(activity.metadata.rating) || "—"} de 5`;
     case "rating_updated": return `alterou uma avaliação para ${Number(activity.metadata.rating) || "—"} de 5`;
@@ -98,9 +98,12 @@ export default async function GroupActivitiesPage({
                     <strong>{activity.actor?.name ?? metadataText(activity.metadata, "actor_name") ?? "Sistema"}</strong>{" "}
                     <span className="text-(--muted)">{activityDescription(activity)}</span>
                   </p>
-                  <time dateTime={activity.created_at} className="mt-2 block text-xs text-(--muted)">
-                    {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(activity.created_at))}
-                  </time>
+                  <LocalDateTime
+                    value={activity.created_at}
+                    dateStyle="medium"
+                    timeStyle="short"
+                    className="mt-2 block text-xs text-(--muted)"
+                  />
                 </div>
               </li>
             ))}

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { acceptInvitation } from "@/app/app/groups/actions";
 import { ActionForm } from "@/components/action-form";
+import { BrandLogo } from "@/components/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Aceitar convite" };
@@ -37,7 +38,7 @@ export default async function InvitationPage({
     <main className="relative grid min-h-screen place-items-center overflow-hidden px-5 py-12">
       <span aria-hidden className="absolute size-[30rem] rounded-full bg-violet-600/10 blur-3xl" />
       <section className="app-auth-panel relative w-full max-w-lg p-8 text-center">
-        <div className="mx-auto mb-5 grid size-12 place-items-center rounded-xl bg-[linear-gradient(145deg,#f7c94b,#8b5cf6)] text-lg font-black text-white">AÍ</div>
+        <BrandLogo size={56} className="mx-auto mb-5" priority />
         {invitation ? (
           <>
             <p className="text-sm font-semibold text-(--accent-strong)">Convite para grupo</p>

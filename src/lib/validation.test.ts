@@ -21,7 +21,6 @@ import {
   requestCodeSchema,
   safeNextPath,
   verifyCodeSchema,
-  voteSchema,
 } from "./validation.ts";
 
 const groupId = "82000000-0000-0000-0000-000000000003";
@@ -153,10 +152,7 @@ test("rejeita conteúdo inseguro ou incompatível", () => {
   assert.equal(contentSchema.safeParse({ ...base, type: "game" }).success, false);
 });
 
-test("valida voto e avaliação", () => {
-  assert.equal(voteSchema.parse({ groupId, contentId, vote: "true" }).vote, true);
-  assert.equal(voteSchema.parse({ groupId, contentId, vote: "false" }).vote, false);
-  assert.equal(voteSchema.safeParse({ groupId, contentId, vote: "yes" }).success, false);
+test("valida avaliação", () => {
 
   const rating = ratingSchema.parse({
     groupId,

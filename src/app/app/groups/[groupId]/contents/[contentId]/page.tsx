@@ -14,6 +14,7 @@ import {
   type ContentReview,
 } from "@/components/content-reviews";
 import { ContentThumbnail } from "@/components/content-thumbnail";
+import { LocalDateTime } from "@/components/local-date-time";
 import { MemberAvatar } from "@/components/member-avatar";
 import {
   MostActiveBadge,
@@ -28,12 +29,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 import {
-  completeContent,
   createContentMessage,
   deleteContent,
-  setContentVote,
   type ContentRatingSummary,
-  type ContentVoteSummary,
 } from "../actions";
 
 export const metadata: Metadata = { title: "Detalhes do conteúdo" };
@@ -94,7 +92,6 @@ export default async function ContentDetailsPage({
   const [
     { data: group },
     { data: contentRow },
-    voteSummaryResult,
     ratingSummaryResult,
     { data: ratingRows, error: ratingsError },
     { data: messageRows, count: messageCount, error: messagesError },
@@ -107,9 +104,6 @@ export default async function ContentDetailsPage({
       .eq("id", contentId)
       .eq("group_id", groupId)
       .single(),
-    supabase.rpc("get_content_vote_summary", {
-      p_content_id: contentId,
-    }),
     supabase.rpc("get_content_rating_summary", {
       p_content_id: contentId,
     }),
@@ -129,20 +123,15 @@ export default async function ContentDetailsPage({
 
   if (!group || !contentRow) notFound();
   if (
-    voteSummaryResult.error
-    || ratingSummaryResult.error
-    || !Array.isArray(voteSummaryResult.data)
-    || !voteSummaryResult.data[0]
+    ratingSummaryResult.error
     || !Array.isArray(ratingSummaryResult.data)
     || !ratingSummaryResult.data[0]
   ) {
     console.error("Content summaries failed", {
-      voteCode: voteSummaryResult.error?.code,
       ratingCode: ratingSummaryResult.error?.code,
     });
     throw new Error("Unable to load content summaries");
   }
-  const voteSummary = voteSummaryResult.data[0] as ContentVoteSummary;
   const rawRatingSummary = ratingSummaryResult.data[0] as {
     average_rating: number | string | null;
     rating_count: number | string;
@@ -208,7 +197,9 @@ export default async function ContentDetailsPage({
               </div>
               <div className="flex justify-between gap-4">
                 <dt>Cadastrado em</dt>
-                <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.created_at))}</dd>
+                <dd className="font-medium text-(--foreground)">
+                  <LocalDateTime value={content.created_at} />
+                </dd>
               </div>
               {content.tmdb_id && content.tmdb_media_type ? (
                 <div className="flex justify-between gap-4">
@@ -229,7 +220,9 @@ export default async function ContentDetailsPage({
                 <>
                   <div className="flex justify-between gap-4">
                     <dt>Concluído em</dt>
-                    <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))}</dd>
+                    <dd className="font-medium text-(--foreground)">
+                      <LocalDateTime value={content.completed_at} />
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt>Concluído por</dt>
@@ -243,108 +236,12 @@ export default async function ContentDetailsPage({
       </article>
 
       <section className="app-panel mt-6 p-6 sm:p-8">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-          <div>
-            <h2 className="text-xl font-bold">Votação</h2>
-            <p className="mt-1 text-sm text-(--muted)">
-              {voteSummary.content_status === "pending"
-                ? "A maioria dos membros ativos precisa votar favoravelmente."
-                : "Conteúdo aprovado pela maioria do grupo."}
-            </p>
-          </div>
-          <span className="w-fit rounded-full border px-3 py-1.5 text-xs font-semibold">
-            {voteSummary.content_status === "pending" ? "Votação aberta" : "Aprovado"}
-          </span>
-        </div>
-
-        <dl className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-(--surface-muted) p-4">
-            <dt className="text-xs text-(--muted)">Favoráveis</dt>
-            <dd className="mt-1 text-2xl font-bold">{voteSummary.favorable_votes}</dd>
-          </div>
-          <div className="rounded-2xl bg-(--surface-muted) p-4">
-            <dt className="text-xs text-(--muted)">Contrários</dt>
-            <dd className="mt-1 text-2xl font-bold">{voteSummary.contrary_votes}</dd>
-          </div>
-          <div className="rounded-2xl bg-(--surface-muted) p-4">
-            <dt className="text-xs text-(--muted)">Membros ativos</dt>
-            <dd className="mt-1 text-2xl font-bold">{voteSummary.active_members}</dd>
-          </div>
-        </dl>
-
-        <div className="mt-5 rounded-2xl border p-4 text-sm">
-          <p>
-            Seu voto: <strong>{voteSummary.current_user_vote === null
-              ? "Ainda não votou"
-              : voteSummary.current_user_vote
-                ? "Favorável"
-                : "Contrário"}</strong>
-          </p>
-          {voteSummary.content_status === "pending" ? (
-            <p className="mt-1 text-(--muted)">
-              {voteSummary.favorable_votes_needed === 1
-                ? "Falta 1 voto favorável para aprovação."
-                : `Faltam ${voteSummary.favorable_votes_needed} votos favoráveis para aprovação.`}
-            </p>
-          ) : (
-            <p className="mt-1 text-(--muted)">A votação está encerrada e os votos são somente para leitura.</p>
-          )}
-        </div>
-
-        {voteSummary.content_status === "pending" ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <ActionForm
-              action={setContentVote}
-              submitLabel={voteSummary.current_user_vote === true ? "Favorável — seu voto" : "Votar favorável"}
-              pendingLabel="Registrando…"
-              className="space-y-2"
-              buttonClassName="app-button-primary w-full disabled:opacity-60"
-            >
-              <input type="hidden" name="groupId" value={groupId} />
-              <input type="hidden" name="contentId" value={content.id} />
-              <input type="hidden" name="vote" value="true" />
-            </ActionForm>
-            <ActionForm
-              action={setContentVote}
-              submitLabel={voteSummary.current_user_vote === false ? "Contrário — seu voto" : "Votar contrário"}
-              pendingLabel="Registrando…"
-              className="space-y-2"
-              buttonClassName="app-button-secondary w-full disabled:opacity-60"
-            >
-              <input type="hidden" name="groupId" value={groupId} />
-              <input type="hidden" name="contentId" value={content.id} />
-              <input type="hidden" name="vote" value="false" />
-            </ActionForm>
-          </div>
-        ) : null}
-      </section>
-
-      {content.status === "approved" ? (
-        <section className="app-panel mt-6 p-6 sm:p-8">
-          <h2 className="text-xl font-bold">Concluir conteúdo</h2>
-          <p className="mt-2 text-sm text-(--muted)">
-            Qualquer membro ativo pode informar que este conteúdo foi assistido.
-          </p>
-          <ActionForm
-            action={completeContent}
-            submitLabel="Marcar como assistido"
-            pendingLabel="Concluindo…"
-            confirmMessage="Confirmar que este conteúdo foi assistido?"
-            className="mt-5 space-y-3"
-            buttonClassName="app-button-primary disabled:opacity-60"
-          >
-            <input type="hidden" name="groupId" value={groupId} />
-            <input type="hidden" name="contentId" value={content.id} />
-          </ActionForm>
-        </section>
-      ) : null}
-
-      {content.status === "completed" ? (
-        <section className="app-panel mt-6 p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
               <h2 className="text-xl font-bold">Avaliações</h2>
-              <p className="mt-1 text-sm text-(--muted)">Avalie este conteúdo de 1 a 5 estrelas.</p>
+              <p className="mt-1 text-sm text-(--muted)">
+                Avalie este conteúdo de 1 a 5 estrelas. A primeira avaliação o marcará como concluído.
+              </p>
             </div>
             <div className="rounded-2xl bg-(--surface-muted) px-5 py-3 text-right">
               <p className="text-2xl font-bold" aria-label={ratingSummary.average_rating === null ? "Sem avaliações" : `Média ${ratingSummary.average_rating.toFixed(1)} de 5`}>
@@ -379,8 +276,7 @@ export default async function ContentDetailsPage({
               currentComment={currentUserRating?.comment ?? null}
             />
           </div>
-        </section>
-      ) : null}
+      </section>
 
       {content.trailer_url ? (
         <section className="app-panel mt-6 p-6 sm:p-8">
@@ -453,9 +349,11 @@ export default async function ContentDetailsPage({
                             <MostActiveBadge position={activityRanks.get(message.user_id)!} />
                           ) : null}
                         </div>
-                        <time dateTime={message.created_at}>
-                          {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
-                        </time>
+                        <LocalDateTime
+                          value={message.created_at}
+                          dateStyle="medium"
+                          timeStyle="short"
+                        />
                       </div>
                       {message.deleted_at ? (
                         <p className="mt-3 italic text-(--muted)">Mensagem removida</p>
@@ -505,7 +403,7 @@ export default async function ContentDetailsPage({
       {canManage ? (
         <section className="app-panel mt-6 p-7 sm:p-9">
           <h2 className="text-2xl font-bold">Editar conteúdo</h2>
-          <p className="mt-2 text-sm text-(--muted)">Você pode alterar sua indicação enquanto ela estiver aguardando aprovação.</p>
+          <p className="mt-2 text-sm text-(--muted)">Você pode alterar sua indicação enquanto ela ainda não recebeu avaliações.</p>
           <div className="mt-6">
             <ContentForm groupId={groupId} content={content} />
           </div>

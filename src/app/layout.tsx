@@ -19,7 +19,7 @@ const themeBootScript = `
 
 export const metadata: Metadata = {
   title: { default: "Indica Aí", template: "%s | Indica Aí" },
-  description: "Escolha, vote e compartilhe conteúdos com seus amigos.",
+  description: "Indique, avalie e compartilhe conteúdos com seus amigos.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
