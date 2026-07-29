@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 
 import { EmailCodeForm } from "./login/email-code-form";
@@ -26,9 +27,7 @@ export default async function HomePage({
       <span aria-hidden className="absolute -right-24 bottom-1/4 size-80 rounded-full bg-fuchsia-600/8 blur-3xl" />
       <section className="app-auth-panel relative w-full max-w-md p-7 sm:p-9">
         <div className="mb-8">
-          <div className="mb-5 grid size-12 place-items-center rounded-xl bg-[linear-gradient(145deg,#f7c94b,#8b5cf6)] text-lg font-black text-white shadow-lg shadow-violet-950/25">
-            AÍ
-          </div>
+          <BrandLogo size={56} className="mb-5" priority />
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-(--accent-strong)">Seu clube privado</p>
           <h1 className="text-3xl font-bold tracking-tight">Indica Aí</h1>
           <p className="mt-2 text-(--muted)">
