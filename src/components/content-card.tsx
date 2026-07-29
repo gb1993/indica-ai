@@ -5,6 +5,7 @@ import type { ContentStatus, ContentType } from "@/lib/content";
 import { AppIcon } from "./app-icon";
 import { ContentStatusBadge, ContentTypeBadge } from "./content-badges";
 import { ContentThumbnail } from "./content-thumbnail";
+import { LocalDateTime } from "./local-date-time";
 import { MostActiveBadge, type ActivityRank } from "./most-active-badge";
 
 export type ContentCardData = {
@@ -52,7 +53,7 @@ export function ContentCard({ content, eager = false }: { content: ContentCardDa
               <dt>Conclusão</dt>
               <dd className="text-(--foreground)">
                 {content.completed_at
-                  ? new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))
+                  ? <LocalDateTime value={content.completed_at} />
                   : "—"}
               </dd>
             </div>

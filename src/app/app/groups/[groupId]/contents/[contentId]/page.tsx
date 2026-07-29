@@ -14,6 +14,7 @@ import {
   type ContentReview,
 } from "@/components/content-reviews";
 import { ContentThumbnail } from "@/components/content-thumbnail";
+import { LocalDateTime } from "@/components/local-date-time";
 import { MemberAvatar } from "@/components/member-avatar";
 import {
   MostActiveBadge,
@@ -196,7 +197,9 @@ export default async function ContentDetailsPage({
               </div>
               <div className="flex justify-between gap-4">
                 <dt>Cadastrado em</dt>
-                <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.created_at))}</dd>
+                <dd className="font-medium text-(--foreground)">
+                  <LocalDateTime value={content.created_at} />
+                </dd>
               </div>
               {content.tmdb_id && content.tmdb_media_type ? (
                 <div className="flex justify-between gap-4">
@@ -217,7 +220,9 @@ export default async function ContentDetailsPage({
                 <>
                   <div className="flex justify-between gap-4">
                     <dt>Concluído em</dt>
-                    <dd className="font-medium text-(--foreground)">{new Intl.DateTimeFormat("pt-BR").format(new Date(content.completed_at))}</dd>
+                    <dd className="font-medium text-(--foreground)">
+                      <LocalDateTime value={content.completed_at} />
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt>Concluído por</dt>
@@ -344,9 +349,11 @@ export default async function ContentDetailsPage({
                             <MostActiveBadge position={activityRanks.get(message.user_id)!} />
                           ) : null}
                         </div>
-                        <time dateTime={message.created_at}>
-                          {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
-                        </time>
+                        <LocalDateTime
+                          value={message.created_at}
+                          dateStyle="medium"
+                          timeStyle="short"
+                        />
                       </div>
                       {message.deleted_at ? (
                         <p className="mt-3 italic text-(--muted)">Mensagem removida</p>

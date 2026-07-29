@@ -126,12 +126,12 @@ export default async function GroupPage({
 
       <section aria-label="Filtrar conteúdos por status" className="mt-8 border-b">
         <div className="flex gap-1 overflow-x-auto">
-          <Link href={`/app/groups/${groupId}`} aria-current={!activeStatus ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeStatus ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
+          <Link href={`/app/groups/${groupId}`} aria-current={!activeStatus ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeStatus ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
           {sections.map((section) => {
             const params = new URLSearchParams();
             params.set("status", section.status);
             return (
-              <Link key={section.status} href={`/app/groups/${groupId}?${params}`} aria-current={activeStatus === section.status ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeStatus === section.status ? "border-(--accent) font-semibold text-(--foreground)" : "border-transparent text-(--muted) hover:text-(--foreground)"}`}>
+              <Link key={section.status} href={`/app/groups/${groupId}?${params}`} aria-current={activeStatus === section.status ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeStatus === section.status ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>
                 {section.title}
               </Link>
             );

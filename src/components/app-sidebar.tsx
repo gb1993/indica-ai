@@ -106,7 +106,7 @@ function SidebarContent({
 
         <div className="my-5 border-t" />
         <div className="mb-2 flex items-center justify-between px-3">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-white">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-(--muted)">
             Meus grupos
           </p>
           <span className="text-xs text-(--muted)">{groups.length}</span>
