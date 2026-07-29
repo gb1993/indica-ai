@@ -21,20 +21,14 @@ type ContentRow = Omit<ContentCardData, "average_rating" | "rating_count" | "cre
 const sections: Array<{ status: ContentStatus; title: string; subtitle: string; empty: string }> = [
   {
     status: "pending",
-    title: "Indicados pelo grupo",
-    subtitle: "Vote nas indicações. A maioria dos membros ativos precisa aprovar para o conteúdo avançar.",
-    empty: "Nenhum conteúdo aguardando aprovação.",
-  },
-  {
-    status: "approved",
-    title: "Próximos conteúdos",
-    subtitle: "Assista, leia ou acompanhe os conteúdos aprovados e marque cada um como concluído ao finalizar.",
-    empty: "Nenhum conteúdo para ver...",
+    title: "Disponíveis para avaliar",
+    subtitle: "As indicações ficam disponíveis imediatamente. A primeira avaliação marca o conteúdo como concluído.",
+    empty: "Nenhum conteúdo aguardando avaliação.",
   },
   {
     status: "completed",
     title: "Conteúdos concluídos",
-    subtitle: "Avalie o que o grupo já concluiu e compartilhe sua opinião com os demais membros.",
+    subtitle: "Veja as avaliações e compartilhe sua opinião com os demais membros.",
     empty: "Nenhum conteúdo concluído por enquanto.",
   },
 ];

@@ -89,12 +89,6 @@ export function invitationHash(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export const voteSchema = z.object({
-  groupId: uuidSchema,
-  contentId: uuidSchema,
-  vote: z.enum(["true", "false"]).transform((value) => value === "true"),
-});
-
 export const ratingSchema = z.object({
   groupId: uuidSchema,
   contentId: uuidSchema,

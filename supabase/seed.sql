@@ -56,19 +56,13 @@ insert into public.contents (
   trailer_url, status, completed_at, completed_by
 )
 values
-  ('84000000-0000-0000-0000-000000000001', '82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000001', 'movie', 'Filme pendente', null, null, 'dQw4w9WgXcQ', 'pending', null, null),
-  ('84000000-0000-0000-0000-000000000002', '82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000002', 'series', 'Série aprovada', 'Pronta para assistir.', null, null, 'approved', null, null),
+  ('84000000-0000-0000-0000-000000000001', '82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000001', 'movie', 'Filme indicado', null, null, 'dQw4w9WgXcQ', 'pending', null, null),
+  ('84000000-0000-0000-0000-000000000002', '82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000002', 'series', 'Série indicada', 'Pronta para assistir.', null, null, 'pending', null, null),
   ('84000000-0000-0000-0000-000000000003', '82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000003', 'documentary', 'Documentário concluído', 'Já assistido pelo grupo.', null, null, 'completed', now() - interval '1 day', '81000000-0000-0000-0000-000000000001'),
-  ('84000000-0000-0000-0000-000000000006', '82000000-0000-0000-0000-000000000003', '81000000-0000-0000-0000-000000000005', 'movie', 'Duna: Parte Dois', 'Paul Atreides se une a Chani e aos Fremen enquanto busca vingança.', null, 'Way9Dexny3w', 'approved', null, null),
+  ('84000000-0000-0000-0000-000000000006', '82000000-0000-0000-0000-000000000003', '81000000-0000-0000-0000-000000000005', 'movie', 'Duna: Parte Dois', 'Paul Atreides se une a Chani e aos Fremen enquanto busca vingança.', null, 'Way9Dexny3w', 'pending', null, null),
   ('84000000-0000-0000-0000-000000000007', '82000000-0000-0000-0000-000000000003', '81000000-0000-0000-0000-000000000005', 'series', 'Ruptura', 'Funcionários têm as memórias profissionais separadas das pessoais.', null, 'xEQP4VVuyrY', 'completed', now() - interval '3 days', '81000000-0000-0000-0000-000000000005'),
   ('84000000-0000-0000-0000-000000000009', '82000000-0000-0000-0000-000000000003', '81000000-0000-0000-0000-000000000003', 'documentary', 'O Dilema das Redes', 'Um debate sobre o impacto das redes sociais na sociedade.', null, 'uaaC57tcci0', 'completed', now() - interval '8 days', '81000000-0000-0000-0000-000000000003'),
   ('84000000-0000-0000-0000-000000000011', '82000000-0000-0000-0000-000000000003', '81000000-0000-0000-0000-000000000002', 'movie', 'Tudo em Todo o Lugar ao Mesmo Tempo', 'Uma aventura pelo multiverso sobre escolhas, família e possibilidades.', null, 'wxN1T1uxQ2g', 'completed', now() - interval '14 days', '81000000-0000-0000-0000-000000000005');
-
-insert into public.content_votes (content_id, user_id, vote)
-values
-  ('84000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000001', true),
-  ('84000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000002', false),
-  ('84000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000005', true);
 
 insert into public.content_ratings (content_id, user_id, rating, comment)
 values
