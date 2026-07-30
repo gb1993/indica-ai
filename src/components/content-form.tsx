@@ -11,7 +11,10 @@ import {
 import {
   CONTENT_TYPES,
   CONTENT_TYPE_META,
+  normalizeYouTubeVideoId,
   type ContentType,
+  youtubeEmbedUrl,
+  youtubeWatchUrl,
 } from "@/lib/content";
 import type {
   TmdbContentDetails,
@@ -108,6 +111,9 @@ export function ContentForm({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [searching, startSearch] = useTransition();
   const [loadingDetails, startDetails] = useTransition();
+  const selectedTrailerId = selected?.trailerUrl
+    ? normalizeYouTubeVideoId(selected.trailerUrl)
+    : null;
 
   if (editing) {
     if (content!.tmdb_id) {
@@ -288,6 +294,34 @@ export function ContentForm({
               ) : null}
             </div>
           </div>
+          {selectedTrailerId ? (
+            <section aria-labelledby="selected-content-trailer">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <h2 id="selected-content-trailer" className="text-lg font-bold">
+                  Trailer
+                </h2>
+                <a
+                  href={youtubeWatchUrl(selectedTrailerId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-(--accent-strong) hover:underline"
+                >
+                  Abrir no YouTube
+                </a>
+              </div>
+              <div className="aspect-video overflow-hidden rounded-2xl bg-black">
+                <iframe
+                  src={youtubeEmbedUrl(selectedTrailerId)}
+                  title={`Trailer de ${selected.title}`}
+                  className="size-full"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            </section>
+          ) : null}
           <p className="text-xs text-(--muted)">
             Os dados serão confirmados novamente no TMDB ao cadastrar.
           </p>
