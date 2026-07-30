@@ -38,6 +38,15 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/app");
 
+  if (data?.claims && request.nextUrl.pathname === "/") {
+    const next = request.nextUrl.searchParams.get("next");
+    const destination =
+      next?.startsWith("/invite/") && !next.startsWith("//")
+        ? next
+        : "/dashboard";
+    return NextResponse.redirect(new URL(destination, request.url));
+  }
+
   if (!data?.claims && requiresAuthentication) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/";
