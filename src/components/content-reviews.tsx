@@ -65,7 +65,7 @@ export function ContentReviews({ reviews }: { reviews: ContentReview[] }) {
     <>
       <Carousel
         ariaLabel="Destaques das avaliações"
-        slideClassName="basis-full md:basis-1/2"
+        slideClassName="basis-full md:basis-1/3"
         loop
         autoplay
       >

@@ -152,7 +152,7 @@ export default async function GroupPage({
                 <span className="grid min-w-7 place-items-center rounded-full bg-(--surface-muted) px-2 py-1 text-xs text-(--muted)">{items.length}</span>
               </div>
               {items.length ? (
-                section.status === "completed" ? (
+                section.status === "completed" || activeStatus === "pending" ? (
                   <CompletedContentsGrid
                     contents={items}
                     eagerContentId={firstVisibleContentId}

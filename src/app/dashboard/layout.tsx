@@ -2,34 +2,21 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/app-sidebar";
-import { createClient } from "@/lib/supabase/server";
+import { getDashboardContext } from "@/lib/dashboard";
 
 import { logout } from "./actions";
 
-type Membership = {
-  role: "owner" | "member";
-  group: { id: string; name: string } | null;
-};
-
 export default async function AuthenticatedLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData.user) redirect("/");
+  const { user, profile, groups: dashboardGroups } = await getDashboardContext();
+  if (!user) redirect("/");
 
-  const [{ data: profile }, { data: membershipRows }] = await Promise.all([
-    supabase.from("profiles").select("name, email, avatar_url").eq("id", authData.user.id).single(),
-    supabase
-      .from("group_members")
-      .select("role, group:groups(id, name)")
-      .eq("user_id", authData.user.id)
-      .eq("status", "active")
-      .order("joined_at", { ascending: false }),
-  ]);
-  const name = profile?.name ?? authData.user.email?.split("@")[0] ?? "Usuário";
-  const email = profile?.email ?? authData.user.email ?? "";
-  const groups = ((membershipRows ?? []) as unknown as Membership[]).flatMap(
-    ({ group, role }) => (group ? [{ ...group, role }] : []),
-  );
+  const name = profile?.name ?? user.email?.split("@")[0] ?? "Usuário";
+  const email = profile?.email ?? user.email ?? "";
+  const groups = dashboardGroups.map((group) => ({
+    id: group.group_id,
+    name: group.name,
+    role: group.role,
+  }));
 
   return (
     <div className="min-h-screen">
