@@ -63,6 +63,7 @@ Crie `.env.development.local` na raiz do projeto:
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=COLE_A_PUBLISHABLE_KEY_EXIBIDA_PELO_SUPABASE
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_WEBRTC_STUN_URL=stun:stun.cloudflare.com:3478
 TMDB_API_KEY=COLE_SUA_CHAVE_V3_DO_TMDB
 ```
 
@@ -119,20 +120,27 @@ Comandos individuais:
 npm.cmd run test:unit
 npm.cmd run test:coverage
 npm.cmd run test:db
+npm.cmd run test:realtime
 npm.cmd run lint
 npm.cmd run typecheck
 npm.cmd run build
 ```
 
-`test:db` exige Docker Desktop e a stack local do Supabase. `test:coverage` exige no mínimo 70% de cobertura de linhas, funções e branches nos módulos configurados.
+`test:db` e `test:realtime` exigem Docker Desktop e a stack local do Supabase com Realtime ativo. `test:coverage` exige no mínimo 70% de cobertura de linhas, funções e branches nos módulos configurados.
+
+## Transmissão de tela
+
+Qualquer membro ativo pode iniciar uma transmissão na página do grupo. O host compartilha tela e, quando disponível no Chrome/Edge, o áudio da tela. Somente o próprio host pode encerrar a sessão.
+
+O MVP usa WebRTC P2P com `stun:stun.cloudflare.com:3478`, sem TURN. Algumas redes corporativas, firewalls e NATs restritos podem impedir a conexão direta. O áudio depende do navegador, do sistema operacional e da origem selecionada. Cada transmissão aceita um host e até nove viewers.
 
 ## Stack opcional mais enxuta
 
-O projeto não depende de Analytics, Vector, Realtime ou Edge Functions nos testes atuais. O Storage deve permanecer ativo para os avatares. O Imgproxy é opcional porque a imagem já é recortada e convertida para WebP no navegador. Para usar uma stack mais enxuta:
+O projeto depende de Realtime para transmissão de tela. O Storage deve permanecer ativo para os avatares. Analytics, Vector, Edge Functions e Imgproxy podem ser desativados em uma stack mais enxuta:
 
 ```powershell
 npx.cmd supabase stop
-npx.cmd supabase start -x analytics,vector,realtime,edge-runtime,functions,studio,meta,imgproxy
+npx.cmd supabase start -x analytics,vector,edge-runtime,functions,studio,meta,imgproxy
 ```
 
 Nesse modo, o Supabase Studio não fica disponível, mas banco, Auth, API REST e Mailpit continuam funcionando.

@@ -21,6 +21,7 @@ Para usar o Supabase hospedado ou configurar produção, copie `.env.example` pa
 NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 NEXT_PUBLIC_APP_URL=https://indicai.gbdev.pro
+NEXT_PUBLIC_WEBRTC_STUN_URL=stun:stun.cloudflare.com:3478
 TMDB_API_KEY=...
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=acesso@mail.gbdev.pro
@@ -31,6 +32,12 @@ Variáveis `NEXT_PUBLIC_*` são incorporadas ao bundle do navegador e devem cont
 `TMDB_API_KEY` e `RESEND_API_KEY` são segredos de servidor e nunca devem receber o prefixo `NEXT_PUBLIC_`.
 
 O app não usa `SUPABASE_SERVICE_ROLE_KEY`: nenhuma operação normal precisa ignorar RLS. Se ela for necessária em uma rotina administrativa futura, deve permanecer exclusivamente no servidor e em um módulo separado.
+
+## Transmissão de tela
+
+A transmissão usa WebRTC P2P em canais privados do Supabase Realtime. O Supabase transporta somente Presence e signaling; vídeo e áudio seguem diretamente do host para cada viewer. Qualquer membro ativo pode iniciar, somente o host pode encerrar e a sala comporta até nove viewers.
+
+O refresh token permanece em cookie `HttpOnly`. Um Route Handler de mesma origem entrega ao cliente somente o access token corrente, mantido em memória e usado para autorizar o WebSocket. Tópicos de signaling incluem o ID do remetente, permitindo que a RLS vincule cada envio a `auth.uid()`.
 
 As variáveis são validadas com Zod quando cada integração é inicializada. Uma configuração ausente falha explicitamente no servidor sem expor o valor ao usuário.
 
