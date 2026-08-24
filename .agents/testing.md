@@ -4,7 +4,9 @@
 
 `test:coverage` mede os módulos de risco de autenticação, redirects, validação de formulários, conteúdo, upload de avatar e conteúdo textual dos convites. O comando falha se linhas, funções ou branches ficarem abaixo de 70%.
 
-`test:all` combina a verificação de cobertura com os testes de banco. `test:db` exige a stack local do Supabase e o Docker Desktop ativo.
+`test:all` combina cobertura, testes de banco e integração Realtime. `test:db` e `test:realtime` exigem a stack local do Supabase e o Docker Desktop ativo.
+
+`test:realtime` cria usuários locais descartáveis e abre canais privados reais para confirmar membership, Presence e a vinculação do tópico de signaling ao remetente. Ele exige a stack local com Realtime ativo e remove os fixtures ao terminar.
 
 ## Banco e segurança
 
@@ -20,6 +22,8 @@ As suítes pgTAP cobrem:
 - Conclusão automática na primeira avaliação
 - Avaliações, mensagens, atividades e métricas
 - Conteúdos importados do TMDB
+- Sessões de transmissão, concorrência, heartbeat e encerramento exclusivo pelo host
+- Políticas de autorização dos canais privados de Presence e Broadcast
 
 Constraints únicas e bloqueios `FOR UPDATE` protegem os fluxos de convite e avaliação quando requisições concorrentes chegam ao banco.
 

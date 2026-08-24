@@ -8,8 +8,10 @@ import { Carousel } from "@/components/carousel";
 import { CompletedContentsGrid } from "@/components/completed-contents-grid";
 import { ContentCard, type ContentCardData } from "@/components/content-card";
 import { EmptyState } from "@/components/empty-state";
+import { LiveStreamPanel } from "@/components/live-stream-panel";
 import type { ActivityRank } from "@/components/most-active-badge";
 import { type ContentStatus } from "@/lib/content";
+import type { LiveStreamSession } from "@/lib/live-stream";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
@@ -47,15 +49,39 @@ export default async function GroupPage({
     : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: membership }, { count }, { data: contentRows }, mostActiveResult] = await Promise.all([
+  const [{ data: group }, { data: membership }, { count }, { data: contentRows }, mostActiveResult, { data: liveRow }] = await Promise.all([
     supabase.from("groups").select("id, name, description").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
     supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "active"),
     supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, creator:profiles!contents_created_by_fkey(id, name), ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
     supabase.rpc("get_group_most_active_members", { p_group_id: groupId }),
+    supabase
+      .from("live_stream_sessions")
+      .select("id, group_id, host_user_id, started_at, host:profiles!live_stream_sessions_host_user_id_fkey(name)")
+      .eq("group_id", groupId)
+      .eq("status", "live")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   if (!group || !membership) notFound();
   const isOwner = membership.role === "owner";
+  const typedLiveRow = liveRow as unknown as {
+    id: string;
+    group_id: string;
+    host_user_id: string;
+    started_at: string | null;
+    host: { name: string } | null;
+  } | null;
+  const initialLiveSession: LiveStreamSession | null = typedLiveRow
+    ? {
+        id: typedLiveRow.id,
+        groupId: typedLiveRow.group_id,
+        hostUserId: typedLiveRow.host_user_id,
+        hostName: typedLiveRow.host?.name ?? "Um membro",
+        startedAt: typedLiveRow.started_at,
+      }
+    : null;
   const activityRanks = new Map<string, ActivityRank>(
     (Array.isArray(mostActiveResult.data) ? mostActiveResult.data : [])
       .slice(0, 3)
@@ -123,6 +149,12 @@ export default async function GroupPage({
           </div>
         </div>
       </section>
+
+      <LiveStreamPanel
+        groupId={groupId}
+        userId={authData.user!.id}
+        initialSession={initialLiveSession}
+      />
 
       <section aria-label="Filtrar conteúdos por status" className="mt-8 border-b">
         <div className="flex gap-1 overflow-x-auto">
