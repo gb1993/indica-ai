@@ -13,6 +13,7 @@ import {
   createSfuConnectionToken,
   verifySfuConnectionToken,
 } from "@/lib/sfu-connection-token";
+import { getLiveStreamUsageStatus } from "@/lib/live-stream-capacity";
 import { createClient } from "@/lib/supabase/server";
 
 const requestSchema = z.discriminatedUnion("operation", [
@@ -85,6 +86,14 @@ export async function POST(request: NextRequest) {
       if (!description.success || description.data.type !== "offer") {
         return privateResponse({ error: "Oferta WebRTC inválida." }, 400);
       }
+      const usage = await getLiveStreamUsageStatus(supabase);
+      if (!usage.canStart) {
+        return privateResponse({
+          error: usage.monitoringAvailable
+            ? "As transmissões atingiram o limite preventivo de consumo."
+            : "O consumo da transmissão não pôde ser verificado.",
+        }, 503);
+      }
 
       const sfuSession = await createSfuSession(
         `${liveSession.id}:host:${user.id}`,
@@ -106,6 +115,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (parsed.data.operation === "subscribe") {
+      const usage = await getLiveStreamUsageStatus(supabase);
+      if (!usage.canSubscribe) {
+        return privateResponse({
+          error: usage.monitoringAvailable
+            ? "Novos espectadores foram bloqueados pelo limite preventivo de consumo."
+            : "O consumo da transmissão não pôde ser verificado.",
+        }, 503);
+      }
       const tracks = liveSession.sfu_tracks as SfuTrackLocator[] | null;
       if (
         liveSession.status !== "live"

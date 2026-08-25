@@ -23,6 +23,7 @@ As suítes pgTAP cobrem:
 - Avaliações, mensagens, atividades e métricas
 - Conteúdos importados do TMDB
 - Sessões de transmissão, concorrência, heartbeat e encerramento exclusivo pelo host
+- Medição idempotente do consumo WebRTC e bloqueios automáticos da franquia
 - Políticas de autorização dos canais privados de Presence
 
 Constraints únicas e bloqueios `FOR UPDATE` protegem os fluxos de convite e avaliação quando requisições concorrentes chegam ao banco.

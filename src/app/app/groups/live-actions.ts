@@ -1,14 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import type { LiveStreamSession } from "@/lib/live-stream";
+import { getLiveStreamUsageStatus } from "@/lib/live-stream-capacity";
+import type { LiveStreamUsageStatus } from "@/lib/live-stream-usage";
 import { createClient } from "@/lib/supabase/server";
 import { uuidSchema } from "@/lib/validation";
 
 type LiveActionResult<T = undefined> =
   | { ok: true; data: T }
-  | { ok: false; error: string };
+  | { ok: false; error: string; code?: "usage-limit" | "monitoring-unavailable" };
+
+export type LiveStreamPollResult = {
+  session: LiveStreamSession | null;
+  usage: LiveStreamUsageStatus;
+};
 
 async function loadLiveSession(
   sessionId: string,
@@ -39,7 +47,7 @@ async function loadLiveSession(
 
 export async function getActiveLiveStreamAction(
   groupIdValue: string,
-): Promise<LiveActionResult<LiveStreamSession | null>> {
+): Promise<LiveActionResult<LiveStreamPollResult>> {
   const groupId = uuidSchema.safeParse(groupIdValue);
   if (!groupId.success) return { ok: false, error: "Grupo inválido." };
 
@@ -59,9 +67,13 @@ export async function getActiveLiveStreamAction(
     return { ok: false, error: "Não foi possível consultar a transmissão." };
   }
 
+  const usage = await getLiveStreamUsageStatus(supabase);
   return {
     ok: true,
-    data: session ? await loadLiveSession(session.id) : null,
+    data: {
+      session: session ? await loadLiveSession(session.id) : null,
+      usage,
+    },
   };
 }
 
@@ -72,6 +84,16 @@ export async function startLiveStreamAction(
   if (!groupId.success) return { ok: false, error: "Grupo inválido." };
 
   const supabase = await createClient();
+  const usage = await getLiveStreamUsageStatus(supabase);
+  if (!usage.canStart) {
+    return {
+      ok: false,
+      error: usage.monitoringAvailable
+        ? "As transmissões estão temporariamente indisponíveis por limite de consumo."
+        : "As transmissões estão indisponíveis enquanto o consumo não pode ser verificado.",
+      code: usage.monitoringAvailable ? "usage-limit" : "monitoring-unavailable",
+    };
+  }
   const { data: sessionId, error } = await supabase.rpc("start_live_stream", {
     p_group_id: groupId.data,
   });
@@ -102,12 +124,41 @@ export async function heartbeatLiveStreamAction(
   if (!sessionId.success) return { ok: false, error: "Sessão inválida." };
 
   const supabase = await createClient();
+  const usage = await getLiveStreamUsageStatus(supabase);
+  if (usage.mustEndActiveStreams) {
+    await supabase.rpc("end_live_stream", { p_session_id: sessionId.data });
+    return {
+      ok: false,
+      error: "A transmissão foi encerrada automaticamente para respeitar o limite de consumo.",
+      code: "usage-limit",
+    };
+  }
   const { error } = await supabase.rpc("heartbeat_live_stream", {
     p_session_id: sessionId.data,
   });
   return error
     ? { ok: false, error: "A transmissão perdeu o heartbeat." }
     : { ok: true, data: undefined };
+}
+
+export async function reportLiveStreamUsageAction(
+  sessionIdValue: string,
+  totalBytesValue: number,
+): Promise<LiveActionResult<number>> {
+  const sessionId = uuidSchema.safeParse(sessionIdValue);
+  const totalBytes = z.number().int().min(0).max(10_000_000_000_000).safeParse(totalBytesValue);
+  if (!sessionId.success || !totalBytes.success) {
+    return { ok: false, error: "Relatório de consumo inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("report_live_stream_viewer_usage", {
+    p_session_id: sessionId.data,
+    p_total_bytes: totalBytes.data,
+  });
+  return error
+    ? { ok: false, error: "Não foi possível registrar o consumo da transmissão." }
+    : { ok: true, data: Number(data ?? 0) };
 }
 
 export async function endLiveStreamAction(

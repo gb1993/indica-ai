@@ -7,6 +7,7 @@ import {
   endLiveStreamAction,
   getActiveLiveStreamAction,
   heartbeatLiveStreamAction,
+  reportLiveStreamUsageAction,
   startLiveStreamAction,
 } from "@/app/app/groups/live-actions";
 import { getPublicEnv } from "@/lib/env";
@@ -23,6 +24,10 @@ import {
   type PacketCounters,
   stopMediaStream,
 } from "@/lib/live-stream";
+import {
+  LIVE_USAGE_REPORT_INTERVAL_MS,
+  type LiveStreamUsageStatus,
+} from "@/lib/live-stream-usage";
 import { createClient } from "@/lib/supabase/browser";
 
 type ViewState = "idle" | "starting" | "hosting" | "connecting" | "watching" | "connection-failed" | "ended";
@@ -85,10 +90,11 @@ function localDescription(connection: RTCPeerConnection): SfuDescription {
   return { type: description.type as "offer" | "answer", sdp: description.sdp };
 }
 
-export function LiveStreamPanel({ groupId, userId, initialSession }: {
+export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageStatus }: {
   groupId: string;
   userId: string;
   initialSession: LiveStreamSession | null;
+  initialUsageStatus: LiveStreamUsageStatus;
 }) {
   const [viewState, setViewState] = useState<ViewState>("idle");
   const [availableSession, setAvailableSession] = useState(initialSession);
@@ -98,6 +104,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
   const [frameRate, setFrameRate] = useState<30 | 60>(60);
   const [needsAudioActivation, setNeedsAudioActivation] = useState(false);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [usageStatus, setUsageStatus] = useState(initialUsageStatus);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -110,10 +117,12 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
   const refreshTokenTimerRef = useRef<number | null>(null);
   const heartbeatTimerRef = useRef<number | null>(null);
   const statsTimerRef = useRef<number | null>(null);
+  const usageReportTimerRef = useRef<number | null>(null);
   const hostMissingTimerRef = useRef<number | null>(null);
   const packetCountersRef = useRef<PacketCounters | undefined>(undefined);
   const qualityControllerRef = useRef(new AdaptiveFrameRateController());
   const endingRef = useRef(false);
+  const usageReportFailuresRef = useRef(0);
   const rtcConfig: RTCConfiguration = {
     iceServers: [{ urls: getPublicEnv().NEXT_PUBLIC_WEBRTC_STUN_URL }],
   };
@@ -218,6 +227,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
   function cleanupResources(stopLocalTracks: boolean) {
     clearTimer(heartbeatTimerRef);
     clearTimer(statsTimerRef);
+    clearTimer(usageReportTimerRef);
     clearTimer(hostMissingTimerRef);
     if (refreshTokenTimerRef.current !== null) {
       window.clearTimeout(refreshTokenTimerRef.current);
@@ -226,6 +236,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
     closePeerConnection(peerRef.current);
     peerRef.current = null;
     packetCountersRef.current = undefined;
+    usageReportFailuresRef.current = 0;
     remoteStreamRef.current = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (clientRef.current && baseChannelRef.current) void clientRef.current.removeChannel(baseChannelRef.current);
@@ -268,6 +279,25 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
     if (nextFrameRate) await applyFrameRate(nextFrameRate);
   }
 
+  async function reportViewerUsage(sessionId: string) {
+    const reports = await peerRef.current?.getStats().catch(() => null);
+    if (!reports) return;
+    let totalBytes = 0;
+    reports.forEach((report) => {
+      if (report.type === "inbound-rtp") totalBytes += report.bytesReceived ?? 0;
+    });
+    const result = await reportLiveStreamUsageAction(sessionId, Math.round(totalBytes));
+    if (result.ok) {
+      usageReportFailuresRef.current = 0;
+      return;
+    }
+    usageReportFailuresRef.current += 1;
+    if (usageReportFailuresRef.current < 3) return;
+    cleanupResources(false);
+    setViewState("connection-failed");
+    setErrorMessage("A medição de consumo da transmissão foi interrompida.");
+  }
+
   async function endHosting() {
     const session = hostSessionRef.current;
     if (!session || endingRef.current) return;
@@ -307,6 +337,15 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
       cleanupResources(true);
       setViewState("idle");
       setErrorMessage(result.error);
+      if (result.code) {
+        setUsageStatus((current) => ({
+          ...current,
+          canStart: false,
+          canSubscribe: false,
+          monitoringAvailable: result.code !== "monitoring-unavailable",
+          level: result.code === "monitoring-unavailable" ? "monitoring-unavailable" : "blocked",
+        }));
+      }
       return;
     }
     const session = result.data;
@@ -335,7 +374,20 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
       setAvailableSession(session);
       setViewState("hosting");
       heartbeatTimerRef.current = window.setInterval(() => {
-        void heartbeatLiveStreamAction(session.id).then((heartbeat) => { if (!heartbeat.ok) void endHosting(); });
+        void heartbeatLiveStreamAction(session.id).then((heartbeat) => {
+          if (heartbeat.ok) return;
+          if (heartbeat.code === "usage-limit") {
+            setUsageStatus((current) => ({
+              ...current,
+              canStart: false,
+              canSubscribe: false,
+              mustEndActiveStreams: true,
+              level: "hard-stop",
+            }));
+            setErrorMessage(heartbeat.error);
+          }
+          void endHosting();
+        });
       }, LIVE_HEARTBEAT_INTERVAL_MS);
       statsTimerRef.current = window.setInterval(() => void sampleHostStats(), LIVE_STATS_INTERVAL_MS);
     } catch (error) {
@@ -385,6 +437,11 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
         sessionDescription: localDescription(connection),
       });
       await setupPresence(session, "viewer");
+      await reportViewerUsage(session.id);
+      usageReportTimerRef.current = window.setInterval(
+        () => void reportViewerUsage(session.id),
+        LIVE_USAGE_REPORT_INTERVAL_MS,
+      );
     } catch (error) {
       cleanupResources(false);
       setViewState("connection-failed");
@@ -411,8 +468,9 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
     const poll = async () => {
       const result = await getActiveLiveStreamAction(groupId);
       if (cancelled || !result.ok) return;
-      setAvailableSession(result.data);
-      if (["connecting", "watching", "connection-failed"].includes(viewState) && !result.data) {
+      setUsageStatus(result.data.usage);
+      setAvailableSession(result.data.session);
+      if (["connecting", "watching", "connection-failed"].includes(viewState) && !result.data.session) {
         cleanupResources(false);
         setViewState("ended");
       }
@@ -442,6 +500,8 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
 
   const isHost = availableSession?.hostUserId === userId;
   const activeState = availableSession || ["starting", "hosting", "connecting", "watching"].includes(viewState);
+
+  if (!usageStatus.canStart && !availableSession && !activeState) return null;
 
   return (
     <section aria-label="Transmissão de tela" className="mt-8 overflow-hidden rounded-2xl border bg-(--surface) shadow-sm">
@@ -496,8 +556,10 @@ export function LiveStreamPanel({ groupId, userId, initialSession }: {
             </div>
             {isHost ? (
               <button type="button" onClick={() => void endPreviousHostSession()} className="app-button-secondary text-red-500">Encerrar minha transmissão</button>
-            ) : (
+            ) : usageStatus.canSubscribe ? (
               <button type="button" onClick={() => void watchStream()} className="app-button-primary">Assistir</button>
+            ) : (
+              <p className="text-sm text-(--muted)">Novos espectadores estão temporariamente indisponíveis.</p>
             )}
           </div>
         ) : viewState === "starting" ? (
