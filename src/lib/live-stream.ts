@@ -13,6 +13,45 @@ export type LiveStreamSession = {
 };
 
 export type PacketCounters = { sent: number; lost: number };
+export type LiveStreamConnectedParticipant = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  isHost: boolean;
+  isCurrentUser: boolean;
+  joinedAt: string;
+};
+
+export function buildLiveStreamParticipants({
+  presences,
+  profiles,
+  hostUserId,
+  hostName,
+  currentUserId,
+}: {
+  presences: Array<{ id: string; joinedAt: string }>;
+  profiles: Array<{ id: string; name: string; avatar_url: string | null }>;
+  hostUserId: string;
+  hostName: string;
+  currentUserId: string;
+}): LiveStreamConnectedParticipant[] {
+  const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
+  return presences
+    .map((presence) => {
+      const profile = profilesById.get(presence.id);
+      return {
+        id: presence.id,
+        name: profile?.name ?? (presence.id === hostUserId ? hostName : "Membro"),
+        avatarUrl: profile?.avatar_url ?? null,
+        isHost: presence.id === hostUserId,
+        isCurrentUser: presence.id === currentUserId,
+        joinedAt: presence.joinedAt,
+      };
+    })
+    .sort((left, right) => Number(right.isHost) - Number(left.isHost)
+      || left.joinedAt.localeCompare(right.joinedAt)
+      || left.name.localeCompare(right.name));
+}
 
 export function calculatePacketLossRate(
   previous: PacketCounters | undefined,

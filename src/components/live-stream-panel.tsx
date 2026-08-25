@@ -3,6 +3,8 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 
+import { AppIcon } from "@/components/app-icon";
+import { MemberAvatar } from "@/components/member-avatar";
 import {
   endLiveStreamAction,
   getActiveLiveStreamAction,
@@ -14,6 +16,7 @@ import { getPublicEnv } from "@/lib/env";
 import {
   AdaptiveFrameRateController,
   attemptVideoPlayback,
+  buildLiveStreamParticipants,
   calculatePacketLossRate,
   closePeerConnection,
   hasDisplayAudio as streamHasDisplayAudio,
@@ -23,6 +26,7 @@ import {
   type LiveStreamSession,
   type PacketCounters,
   stopMediaStream,
+  type LiveStreamConnectedParticipant,
 } from "@/lib/live-stream";
 import {
   LIVE_USAGE_REPORT_INTERVAL_MS,
@@ -43,6 +47,30 @@ type DisplayMediaOptionsWithAudioHints = DisplayMediaStreamOptions & {
   surfaceSwitching?: "include" | "exclude";
   windowAudio?: "exclude" | "window" | "system";
 };
+type PresenceMetadata = { joined_at?: string };
+
+function ConnectedParticipants({ participants }: { participants: LiveStreamConnectedParticipant[] }) {
+  if (!participants.length) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wider text-(--muted)">Conectados</p>
+      <div className="flex flex-wrap gap-2">
+        {participants.map((participant) => (
+          <div key={participant.id} className="flex min-w-44 items-center gap-2.5 rounded-xl border bg-(--surface-muted) px-3 py-2">
+            <MemberAvatar name={participant.name} avatarUrl={participant.avatarUrl} size="sm" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{participant.name}</p>
+              <p className="text-xs text-(--muted)">
+                {participant.isHost ? "Host" : participant.isCurrentUser ? "Você" : "Assistindo"}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function subscribe(channel: RealtimeChannel) {
   return new Promise<void>((resolve, reject) => {
@@ -110,9 +138,12 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
   const [needsAudioActivation, setNeedsAudioActivation] = useState(false);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [usageStatus, setUsageStatus] = useState(initialUsageStatus);
+  const [connectedParticipants, setConnectedParticipants] = useState<LiveStreamConnectedParticipant[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const clientRef = useRef<SupabaseClient | null>(null);
   const baseChannelRef = useRef<RealtimeChannel | null>(null);
@@ -160,6 +191,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
   async function setupPresence(session: LiveStreamSession, role: "host" | "viewer") {
     const client = await getRealtimeClient();
     const channel = client.channel(`live:${session.id}`, { config: { private: true, presence: { key: userId } } });
+    let presenceSyncVersion = 0;
     let initialPresenceSettled = false;
     let resolveInitialPresence!: () => void;
     let rejectInitialPresence!: (error: Error) => void;
@@ -172,12 +204,36 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
       initialPresenceSettled = true;
       rejectInitialPresence(new Error("Não foi possível confirmar sua entrada na transmissão."));
     }, 10_000);
+    const loadConnectedParticipants = async (
+      entries: Array<[string, PresenceMetadata[]]>,
+      version: number,
+    ) => {
+      const ids = entries.map(([presenceUserId]) => presenceUserId);
+      const { data } = ids.length
+        ? await client.from("profiles").select("id, name, avatar_url").in("id", ids)
+        : { data: [] };
+      if (version !== presenceSyncVersion || baseChannelRef.current !== channel) return;
+
+      setConnectedParticipants(buildLiveStreamParticipants({
+        presences: entries.map(([presenceUserId, presences]) => ({
+          id: presenceUserId,
+          joinedAt: String(presences[0]?.joined_at ?? ""),
+        })),
+        profiles: data ?? [],
+        hostUserId: session.hostUserId,
+        hostName: session.hostName,
+        currentUserId: userId,
+      }));
+    };
     const syncPresence = () => {
       const state = channel.presenceState();
-      setParticipantCount(Math.max(1, Object.keys(state).length));
+      const entries = Object.entries(state) as Array<[string, PresenceMetadata[]]>;
+      setParticipantCount(Math.max(1, entries.length));
+      presenceSyncVersion += 1;
+      void loadConnectedParticipants(entries, presenceSyncVersion);
       if (role !== "viewer") return;
 
-      const admittedViewerIds = Object.entries(state)
+      const admittedViewerIds = entries
         .filter(([presenceUserId]) => presenceUserId !== session.hostUserId)
         .map(([presenceUserId, presences]) => ({
           presenceUserId,
@@ -246,6 +302,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (clientRef.current && baseChannelRef.current) void clientRef.current.removeChannel(baseChannelRef.current);
     baseChannelRef.current = null;
+    setConnectedParticipants([]);
     if (stopLocalTracks) {
       stopMediaStream(localStreamRef.current);
       localStreamRef.current = null;
@@ -467,9 +524,24 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
     } else setErrorMessage(result.error);
   }
 
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await playerRef.current?.requestFullscreen();
+    } catch {
+      setErrorMessage("Não foi possível abrir a transmissão em tela cheia.");
+    }
+  }
+
   useEffect(() => {
     if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
   }, [localStream]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(document.fullscreenElement === playerRef.current);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   useEffect(() => {
     if (["starting", "hosting"].includes(viewState)) return;
@@ -527,7 +599,12 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
       <div className="p-5 sm:p-6">
         {viewState === "hosting" ? (
           <div className="space-y-4">
-            <video ref={localVideoRef} autoPlay playsInline muted className="aspect-video w-full rounded-xl bg-black object-contain" />
+            <div ref={playerRef} className="relative aspect-video w-full overflow-hidden rounded-xl bg-black fullscreen:aspect-auto fullscreen:h-screen fullscreen:rounded-none">
+              <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-contain" />
+              <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute right-3 top-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
+                <AppIcon name={isFullscreen ? "minimize" : "maximize"} className="size-5" />
+              </button>
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2 text-xs text-(--muted)">
                 <span className="rounded-full bg-(--surface-muted) px-3 py-1.5">Qualidade: {frameRate} fps</span>
@@ -537,10 +614,16 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
               </div>
               <button type="button" onClick={() => void endHosting()} className="app-button-secondary text-red-500">Encerrar transmissão</button>
             </div>
+            <ConnectedParticipants participants={connectedParticipants} />
           </div>
         ) : ["connecting", "watching"].includes(viewState) ? (
           <div className="space-y-4">
-            <video ref={remoteVideoRef} autoPlay playsInline className="aspect-video w-full rounded-xl bg-black object-contain" />
+            <div ref={playerRef} className="relative aspect-video w-full overflow-hidden rounded-xl bg-black fullscreen:aspect-auto fullscreen:h-screen fullscreen:rounded-none">
+              <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-contain" />
+              <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute right-3 top-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
+                <AppIcon name={isFullscreen ? "minimize" : "maximize"} className="size-5" />
+              </button>
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-(--muted)">{viewState === "connecting" ? "Conectando ao servidor de mídia…" : `${availableSession?.hostName ?? "Um membro"} está compartilhando a tela.`}</p>
               {needsAudioActivation && (
@@ -550,6 +633,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
                 }}>Ativar áudio</button>
               )}
             </div>
+            <ConnectedParticipants participants={connectedParticipants} />
           </div>
         ) : viewState === "connection-failed" ? (
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">

@@ -12,8 +12,10 @@ import {
   House,
   Info,
   LogOut,
+  Maximize2,
   Menu,
   MessageCircle,
+  Minimize2,
   Moon,
   Pencil,
   Plus,
@@ -45,8 +47,10 @@ export type AppIconName =
   | "home"
   | "info"
   | "logout"
+  | "maximize"
   | "menu"
   | "messages"
+  | "minimize"
   | "moon"
   | "pencil"
   | "plus"
@@ -75,8 +79,10 @@ const icons: Record<AppIconName, LucideIcon> = {
   home: House,
   info: Info,
   logout: LogOut,
+  maximize: Maximize2,
   menu: Menu,
   messages: MessageCircle,
+  minimize: Minimize2,
   moon: Moon,
   pencil: Pencil,
   plus: Plus,
