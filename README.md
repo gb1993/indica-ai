@@ -142,6 +142,8 @@ O áudio depende do navegador, do sistema operacional e da origem selecionada. C
 
 O controle de consumo concilia diariamente a API oficial de billing com os bytes WebRTC recebidos e reportados pelos espectadores a cada 20 segundos. Uma margem de 25% cobre overhead e atrasos: aos 850 GB novas transmissões e espectadores são bloqueados; aos 900 GB transmissões ativas são encerradas pelo heartbeat. Se a consulta de billing falhar, novas conexões permanecem bloqueadas preventivamente.
 
+O cliente tenta primeiro o endpoint FOCUS v2 de billing e usa automaticamente o endpoint v1 em contas nas quais o v2 Alpha/Restricted retorna `403` ou `404`.
+
 ## Stack opcional mais enxuta
 
 O projeto depende de Realtime para transmissão de tela. O Storage deve permanecer ativo para os avatares. Analytics, Vector, Edge Functions e Imgproxy podem ser desativados em uma stack mais enxuta:

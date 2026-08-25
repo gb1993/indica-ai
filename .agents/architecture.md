@@ -45,6 +45,8 @@ O refresh token permanece em cookie `HttpOnly`. Um Route Handler de mesma origem
 
 O controle de custo combina o billing oficial da Cloudflare com deltas idempotentes de `bytesReceived` reportados pelos viewers. O servidor aplica 25% de margem, bloqueia novas conexões em 850 GB e encerra sessões ativas em 900 GB. Falhas na consulta oficial bloqueiam novas conexões, mas não derrubam uma sessão existente por uma indisponibilidade transitória.
 
+A consulta usa o endpoint FOCUS v2 quando disponível e recua para o billing v1 quando a Cloudflare responde `403` ou `404` ao endpoint ainda restrito.
+
 As variáveis são validadas com Zod quando cada integração é inicializada. Uma configuração ausente falha explicitamente no servidor sem expor o valor ao usuário.
 
 ## Autenticação por código

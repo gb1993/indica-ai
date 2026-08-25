@@ -45,6 +45,21 @@ test("usa o início do mês quando ainda não há consumo Realtime", () => {
   assert.equal(snapshot.confirmedThrough, "2026-08-01T00:00:00.000Z");
 });
 
+test("aceita o formato snake_case retornado pelo billing v1", () => {
+  const snapshot = parseCloudflareBillingUsage({
+    success: true,
+    result: [{
+      service_family_name: "Cloudflare Calls",
+      service_name: "Realtime SFU",
+      consumed_quantity: 2,
+      consumed_unit: "GB",
+      charge_period_end: "2026-08-24T00:00:00Z",
+    }],
+  }, new Date("2026-08-25T00:00:00Z"));
+  assert.equal(snapshot.confirmedBytes, 2_000_000_000);
+  assert.equal(snapshot.confirmedThrough, "2026-08-24T00:00:00.000Z");
+});
+
 test("bloqueia novas conexões e encerra no limite rígido", () => {
   const base = {
     confirmedBytes: 0,
