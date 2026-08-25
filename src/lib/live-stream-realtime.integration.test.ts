@@ -6,7 +6,6 @@ import test from "node:test";
 import {
   createClient,
   type RealtimeChannel,
-  type RealtimeChannelSendResponse,
 } from "@supabase/supabase-js";
 
 function localSupabaseEnvironment() {
@@ -48,7 +47,7 @@ function subscribeStatus(channel: RealtimeChannel) {
   });
 }
 
-test("Realtime privado aplica membership e vincula signaling ao remetente", async (t) => {
+test("Realtime privado permite Presence somente para membros", async (t) => {
   const { apiUrl, anonKey, serviceRoleKey } = localSupabaseEnvironment();
   const admin = createClient(apiUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -121,13 +120,23 @@ test("Realtime privado aplica membership e vincula signaling ao remetente", asyn
   });
   assert.ifError(startedSession.error);
   sessionId = startedSession.data as string;
-  const activated = await member.rpc("activate_live_stream", {
+  const activated = await member.rpc("activate_live_stream_sfu", {
     p_session_id: sessionId,
+    p_sfu_session_id: "integration-sfu-session",
+    p_sfu_tracks: [{
+      location: "remote",
+      sessionId: "integration-sfu-session",
+      trackName: "screen-video",
+    }],
   });
   assert.ifError(activated.error);
 
   const presence = member.channel(`live:${sessionId}`, {
-    config: { private: true, presence: { key: memberUserId } },
+    config: {
+      private: true,
+      broadcast: { ack: true },
+      presence: { key: memberUserId },
+    },
   });
   const presenceSubscription = await subscribeStatus(presence);
   assert.equal(
@@ -139,6 +148,14 @@ test("Realtime privado aplica membership e vincula signaling ao remetente", asyn
     await presence.track({ user_id: memberUserId, role: "host" }),
     "ok",
   );
+  assert.notEqual(
+    await presence.send({
+      type: "broadcast",
+      event: "legacy-signaling",
+      payload: { senderUserId: memberUserId },
+    }),
+    "ok",
+  );
 
   const outsiderPresence = outsider.channel(`live:${sessionId}`, {
     config: { private: true, presence: { key: outsiderUserId } },
@@ -148,33 +165,4 @@ test("Realtime privado aplica membership e vincula signaling ao remetente", asyn
     "SUBSCRIBED",
   );
 
-  const ownSignal = member.channel(
-    `live:${sessionId}:signal:${memberUserId}`,
-    { config: { private: true, broadcast: { ack: true } } },
-  );
-  const ownSubscription = await subscribeStatus(ownSignal);
-  assert.equal(ownSubscription.status, "SUBSCRIBED", ownSubscription.error);
-  const ownSend: RealtimeChannelSendResponse = await ownSignal.send({
-    type: "broadcast",
-    event: "integration-check",
-    payload: { ok: true },
-  });
-  assert.equal(ownSend, "ok");
-
-  const spoofedSignal = member.channel(
-    `live:${sessionId}:signal:${outsiderUserId}`,
-    { config: { private: true, broadcast: { ack: true } } },
-  );
-  const spoofedSubscription = await subscribeStatus(spoofedSignal);
-  assert.equal(
-    spoofedSubscription.status,
-    "SUBSCRIBED",
-    spoofedSubscription.error,
-  );
-  const spoofedSend: RealtimeChannelSendResponse = await spoofedSignal.send({
-    type: "broadcast",
-    event: "integration-check",
-    payload: { ok: false },
-  });
-  assert.notEqual(spoofedSend, "ok");
 });

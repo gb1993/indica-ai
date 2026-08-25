@@ -22,6 +22,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 NEXT_PUBLIC_APP_URL=https://indicai.gbdev.pro
 NEXT_PUBLIC_WEBRTC_STUN_URL=stun:stun.cloudflare.com:3478
+CLOUDFLARE_REALTIME_APP_ID=...
+CLOUDFLARE_REALTIME_APP_SECRET=...
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_BILLING_API_TOKEN=...
 TMDB_API_KEY=...
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=acesso@mail.gbdev.pro
@@ -29,15 +33,17 @@ RESEND_FROM_EMAIL=acesso@mail.gbdev.pro
 
 Variáveis `NEXT_PUBLIC_*` são incorporadas ao bundle do navegador e devem conter somente valores públicos. A publishable key do Supabase foi feita para esse uso; a autorização real é aplicada por RLS.
 
-`TMDB_API_KEY` e `RESEND_API_KEY` são segredos de servidor e nunca devem receber o prefixo `NEXT_PUBLIC_`.
+`CLOUDFLARE_REALTIME_APP_SECRET`, `CLOUDFLARE_BILLING_API_TOKEN`, `TMDB_API_KEY` e `RESEND_API_KEY` são segredos de servidor e nunca devem receber o prefixo `NEXT_PUBLIC_`. O token de billing recebe somente a permissão `Account > Billing > Read`.
 
 O app não usa `SUPABASE_SERVICE_ROLE_KEY`: nenhuma operação normal precisa ignorar RLS. Se ela for necessária em uma rotina administrativa futura, deve permanecer exclusivamente no servidor e em um módulo separado.
 
 ## Transmissão de tela
 
-A transmissão usa WebRTC P2P em canais privados do Supabase Realtime. O Supabase transporta somente Presence e signaling; vídeo e áudio seguem diretamente do host para cada viewer. Qualquer membro ativo pode iniciar, somente o host pode encerrar e a sala comporta até nove viewers.
+A transmissão usa WebRTC com o Cloudflare Realtime SFU. O host publica uma vez no SFU e os espectadores assinam as tracks remotas. O Supabase transporta somente Presence e persiste o estado da sessão; vídeo e áudio passam pelo servidor de mídia. Qualquer membro ativo pode iniciar, somente o host pode encerrar e a sala comporta até nove espectadores.
 
-O refresh token permanece em cookie `HttpOnly`. Um Route Handler de mesma origem entrega ao cliente somente o access token corrente, mantido em memória e usado para autorizar o WebSocket. Tópicos de signaling incluem o ID do remetente, permitindo que a RLS vincule cada envio a `auth.uid()`.
+O refresh token permanece em cookie `HttpOnly`. Um Route Handler de mesma origem entrega ao cliente somente o access token corrente, mantido em memória e usado para autorizar o WebSocket. Outro Route Handler valida a sessão Supabase e executa as operações de publicação e assinatura no SFU; o App Secret da Cloudflare nunca é enviado ao navegador. A resposta de renegociação é vinculada ao usuário e à sessão por um token HMAC curto.
+
+O controle de custo combina o billing oficial da Cloudflare com deltas idempotentes de `bytesReceived` reportados pelos viewers. O servidor aplica 25% de margem, bloqueia novas conexões em 850 GB e encerra sessões ativas em 900 GB. Falhas na consulta oficial bloqueiam novas conexões, mas não derrubam uma sessão existente por uma indisponibilidade transitória.
 
 As variáveis são validadas com Zod quando cada integração é inicializada. Uma configuração ausente falha explicitamente no servidor sem expor o valor ao usuário.
 

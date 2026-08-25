@@ -26,6 +26,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_only
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_WEBRTC_STUN_URL: stun:stun.cloudflare.com:3478
+      CLOUDFLARE_REALTIME_APP_ID: 00000000000000000000000000000000
+      CLOUDFLARE_REALTIME_APP_SECRET: cloudflare_realtime_ci_secret
+      CLOUDFLARE_ACCOUNT_ID: 00000000000000000000000000000000
+      CLOUDFLARE_BILLING_API_TOKEN: cloudflare_billing_ci_token
       TMDB_API_KEY: tmdb_ci_only
       RESEND_API_KEY: re_ci_only
       RESEND_FROM_EMAIL: ci@example.com

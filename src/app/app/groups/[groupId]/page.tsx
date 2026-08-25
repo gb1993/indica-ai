@@ -12,6 +12,7 @@ import { LiveStreamPanel } from "@/components/live-stream-panel";
 import type { ActivityRank } from "@/components/most-active-badge";
 import { type ContentStatus } from "@/lib/content";
 import type { LiveStreamSession } from "@/lib/live-stream";
+import { getLiveStreamUsageStatus } from "@/lib/live-stream-capacity";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Grupo" };
@@ -49,7 +50,7 @@ export default async function GroupPage({
     : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: membership }, { count }, { data: contentRows }, mostActiveResult, { data: liveRow }] = await Promise.all([
+  const [{ data: group }, { data: membership }, { count }, { data: contentRows }, mostActiveResult, { data: liveRow }, liveUsageStatus] = await Promise.all([
     supabase.from("groups").select("id, name, description").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
     supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "active"),
@@ -63,6 +64,7 @@ export default async function GroupPage({
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    getLiveStreamUsageStatus(supabase),
   ]);
   if (!group || !membership) notFound();
   const isOwner = membership.role === "owner";
@@ -150,11 +152,14 @@ export default async function GroupPage({
         </div>
       </section>
 
-      <LiveStreamPanel
-        groupId={groupId}
-        userId={authData.user!.id}
-        initialSession={initialLiveSession}
-      />
+      {(initialLiveSession || liveUsageStatus.canStart) && (
+        <LiveStreamPanel
+          groupId={groupId}
+          userId={authData.user!.id}
+          initialSession={initialLiveSession}
+          initialUsageStatus={liveUsageStatus}
+        />
+      )}
 
       <section aria-label="Filtrar conteúdos por status" className="mt-8 border-b">
         <div className="flex gap-1 overflow-x-auto">
