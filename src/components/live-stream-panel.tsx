@@ -38,6 +38,11 @@ type SfuSubscribeResponse = {
   connectionToken: string;
   sessionDescription: SfuDescription;
 };
+type DisplayMediaOptionsWithAudioHints = DisplayMediaStreamOptions & {
+  systemAudio?: "include" | "exclude";
+  surfaceSwitching?: "include" | "exclude";
+  windowAudio?: "exclude" | "window" | "system";
+};
 
 function subscribe(channel: RealtimeChannel) {
   return new Promise<void>((resolve, reject) => {
@@ -316,10 +321,14 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
     setViewState("starting");
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({
+      const displayMediaOptions: DisplayMediaOptionsWithAudioHints = {
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60, max: 60 } },
         audio: true,
-      });
+        systemAudio: "include",
+        windowAudio: "system",
+        surfaceSwitching: "include",
+      };
+      stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
     } catch (error) {
       setViewState("idle");
       if (!(error instanceof DOMException && error.name === "NotAllowedError")) setErrorMessage("Não foi possível acessar a tela selecionada.");
@@ -522,7 +531,9 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2 text-xs text-(--muted)">
                 <span className="rounded-full bg-(--surface-muted) px-3 py-1.5">Qualidade: {frameRate} fps</span>
-                <span className="rounded-full bg-(--surface-muted) px-3 py-1.5">Áudio da tela: {hasDisplayAudio ? "disponível" : "indisponível"}</span>
+                <span className="rounded-full bg-(--surface-muted) px-3 py-1.5">
+                  {hasDisplayAudio ? "Áudio: compartilhando" : "Sem áudio — reinicie e marque Compartilhar áudio"}
+                </span>
               </div>
               <button type="button" onClick={() => void endHosting()} className="app-button-secondary text-red-500">Encerrar transmissão</button>
             </div>

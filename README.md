@@ -138,7 +138,7 @@ Qualquer membro ativo pode iniciar uma transmissão na página do grupo. O host 
 
 A mídia usa WebRTC por meio do Cloudflare Realtime SFU. O host publica uma vez no servidor de mídia e cada espectador recebe uma cópia do SFU, evitando a dependência de uma conexão direta entre os navegadores. O Supabase mantém autenticação, estado da sessão e Presence; ele não transporta vídeo ou áudio.
 
-O áudio depende do navegador, do sistema operacional e da origem selecionada. Cada transmissão aceita um host e até nove espectadores. Para ativar o recurso, crie um Realtime App na Cloudflare e configure `CLOUDFLARE_REALTIME_APP_ID` e `CLOUDFLARE_REALTIME_APP_SECRET` no ambiente do servidor. O secret nunca deve usar o prefixo `NEXT_PUBLIC_`.
+O áudio depende do navegador, do sistema operacional e da origem selecionada. No Chrome/Edge, prefira compartilhar uma guia e marque **Compartilhar áudio**; ao compartilhar a tela inteira, habilite **Compartilhar áudio do sistema** quando a opção estiver disponível. Cada transmissão aceita um host e até nove espectadores. Para ativar o recurso, crie um Realtime App na Cloudflare e configure `CLOUDFLARE_REALTIME_APP_ID` e `CLOUDFLARE_REALTIME_APP_SECRET` no ambiente do servidor. O secret nunca deve usar o prefixo `NEXT_PUBLIC_`.
 
 O controle de consumo concilia diariamente a API oficial de billing com os bytes WebRTC recebidos e reportados pelos espectadores a cada 20 segundos. Uma margem de 25% cobre overhead e atrasos: aos 850 GB novas transmissões e espectadores são bloqueados; aos 900 GB transmissões ativas são encerradas pelo heartbeat. Se a consulta de billing falhar, novas conexões permanecem bloqueadas preventivamente.
 
