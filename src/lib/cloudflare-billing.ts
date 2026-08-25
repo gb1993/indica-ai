@@ -31,20 +31,27 @@ async function requestBillingSnapshot() {
   const config = getConfig();
   if (!config.success) return null;
   try {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.data.accountId)}/billable/usage`,
-      {
-        method: "GET",
-        cache: "no-store",
-        headers: {
-          Authorization: `Bearer ${config.data.apiToken}`,
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(8_000),
+    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.data.accountId)}`;
+    const request = (path: string) => fetch(`${baseUrl}${path}`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${config.data.apiToken}`,
+        Accept: "application/json",
       },
-    );
-    if (!response.ok) return null;
-    return parseCloudflareBillingUsage(await response.json());
+      signal: AbortSignal.timeout(8_000),
+    });
+    const currentResponse = await request("/billable/usage");
+    if (currentResponse.ok) {
+      return parseCloudflareBillingUsage(await currentResponse.json());
+    }
+
+    // The FOCUS v2 endpoint is still restricted for some Pay-as-you-go
+    // accounts. Its v1 counterpart exposes the same daily usage needed here.
+    if (![403, 404].includes(currentResponse.status)) return null;
+    const fallbackResponse = await request("/billable-usage");
+    if (!fallbackResponse.ok) return null;
+    return parseCloudflareBillingUsage(await fallbackResponse.json());
   } catch {
     return null;
   }
