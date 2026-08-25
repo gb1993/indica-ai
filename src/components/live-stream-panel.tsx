@@ -192,7 +192,6 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
   async function setupPresence(session: LiveStreamSession, role: "host" | "viewer") {
     const client = await getRealtimeClient();
     const channel = client.channel(`live:${session.id}`, { config: { private: true, presence: { key: userId } } });
-    let presenceSyncVersion = 0;
     let initialPresenceSettled = false;
     let resolveInitialPresence!: () => void;
     let rejectInitialPresence!: (error: Error) => void;
@@ -205,27 +204,6 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
       initialPresenceSettled = true;
       rejectInitialPresence(new Error("Não foi possível confirmar sua entrada na transmissão."));
     }, 10_000);
-    const loadConnectedParticipants = async (
-      entries: Array<[string, PresenceMetadata[]]>,
-      version: number,
-    ) => {
-      const ids = entries.map(([presenceUserId]) => presenceUserId);
-      const { data } = ids.length
-        ? await client.from("profiles").select("id, name, avatar_url").in("id", ids)
-        : { data: [] };
-      if (version !== presenceSyncVersion || baseChannelRef.current !== channel) return;
-
-      setConnectedParticipants(buildLiveStreamParticipants({
-        presences: entries.map(([presenceUserId, presences]) => ({
-          id: presenceUserId,
-          joinedAt: String(presences[0]?.joined_at ?? ""),
-        })),
-        profiles: data ?? [],
-        hostUserId: session.hostUserId,
-        hostName: session.hostName,
-        currentUserId: userId,
-      }));
-    };
     const syncPresence = () => {
       const state = channel.presenceState();
       const rawEntries = Object.entries(state) as Array<[string, PresenceMetadata[]]>;
