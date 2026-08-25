@@ -4,12 +4,36 @@ import test from "node:test";
 import {
   AdaptiveFrameRateController,
   attemptVideoPlayback,
+  buildLiveStreamParticipants,
   calculatePacketLossRate,
   closePeerConnection,
   hasDisplayAudio,
   LIVE_QUALITY_COOLDOWN_MS,
   stopMediaStream,
 } from "./live-stream.ts";
+
+test("monta participantes conectados com host, nome e avatar", () => {
+  const participants = buildLiveStreamParticipants({
+    presences: [
+      { id: "viewer", joinedAt: "2026-08-25T12:01:00Z" },
+      { id: "host", joinedAt: "2026-08-25T12:00:00Z" },
+      { id: "fallback", joinedAt: "2026-08-25T12:02:00Z" },
+    ],
+    profiles: [
+      { id: "host", name: "Gabriel", avatar_url: "https://example.test/gabriel.webp" },
+      { id: "viewer", name: "Dani", avatar_url: null },
+    ],
+    hostUserId: "host",
+    hostName: "Host original",
+    currentUserId: "viewer",
+  });
+
+  assert.deepEqual(participants.map(({ id, name, avatarUrl, isHost, isCurrentUser }) => ({ id, name, avatarUrl, isHost, isCurrentUser })), [
+    { id: "host", name: "Gabriel", avatarUrl: "https://example.test/gabriel.webp", isHost: true, isCurrentUser: false },
+    { id: "viewer", name: "Dani", avatarUrl: null, isHost: false, isCurrentUser: true },
+    { id: "fallback", name: "Membro", avatarUrl: null, isHost: false, isCurrentUser: false },
+  ]);
+});
 
 test("calcula perda usando deltas da janela recente", () => {
   assert.equal(calculatePacketLossRate(undefined, { sent: 100, lost: 5 }), null);
