@@ -6,7 +6,7 @@
 
 `test:all` combina cobertura, testes de banco e integração Realtime. `test:db` e `test:realtime` exigem a stack local do Supabase e o Docker Desktop ativo.
 
-`test:realtime` cria usuários locais descartáveis e abre canais privados reais para confirmar membership, Presence e a vinculação do tópico de signaling ao remetente. Ele exige a stack local com Realtime ativo e remove os fixtures ao terminar.
+`test:realtime` cria usuários locais descartáveis e abre canais privados reais para confirmar membership e Presence. Ele exige a stack local com Realtime ativo e remove os fixtures ao terminar.
 
 ## Banco e segurança
 
@@ -23,7 +23,7 @@ As suítes pgTAP cobrem:
 - Avaliações, mensagens, atividades e métricas
 - Conteúdos importados do TMDB
 - Sessões de transmissão, concorrência, heartbeat e encerramento exclusivo pelo host
-- Políticas de autorização dos canais privados de Presence e Broadcast
+- Políticas de autorização dos canais privados de Presence
 
 Constraints únicas e bloqueios `FOR UPDATE` protegem os fluxos de convite e avaliação quando requisições concorrentes chegam ao banco.
 

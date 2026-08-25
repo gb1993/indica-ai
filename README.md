@@ -64,6 +64,8 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=COLE_A_PUBLISHABLE_KEY_EXIBIDA_PELO_SUPABASE
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_WEBRTC_STUN_URL=stun:stun.cloudflare.com:3478
+CLOUDFLARE_REALTIME_APP_ID=COLE_O_APP_ID_DO_REALTIME
+CLOUDFLARE_REALTIME_APP_SECRET=COLE_O_APP_SECRET_DO_REALTIME
 TMDB_API_KEY=COLE_SUA_CHAVE_V3_DO_TMDB
 ```
 
@@ -71,7 +73,7 @@ Use o valor `PUBLISHABLE_KEY` mostrado por `supabase start` ou `supabase status`
 
 O arquivo `.env.development.local` é ignorado pelo Git e sobrescreve variáveis públicas de `.env.local` somente durante `next dev`.
 
-`TMDB_API_KEY` é necessária para pesquisar e cadastrar conteúdos pelo TMDB. `RESEND_API_KEY` e `RESEND_FROM_EMAIL` são opcionais no ambiente local e só são necessários para testar o envio real de convites pela API do Resend.
+As credenciais `CLOUDFLARE_REALTIME_*` são necessárias para testar transmissões reais e devem permanecer somente no servidor. `TMDB_API_KEY` é necessária para pesquisar e cadastrar conteúdos pelo TMDB. `RESEND_API_KEY` e `RESEND_FROM_EMAIL` são opcionais no ambiente local e só são necessários para testar o envio real de convites pela API do Resend.
 
 ## 4. Aplique migrations e seed
 
@@ -132,7 +134,9 @@ npm.cmd run build
 
 Qualquer membro ativo pode iniciar uma transmissão na página do grupo. O host compartilha tela e, quando disponível no Chrome/Edge, o áudio da tela. Somente o próprio host pode encerrar a sessão.
 
-O MVP usa WebRTC P2P com `stun:stun.cloudflare.com:3478`, sem TURN. Algumas redes corporativas, firewalls e NATs restritos podem impedir a conexão direta. O áudio depende do navegador, do sistema operacional e da origem selecionada. Cada transmissão aceita um host e até nove viewers.
+A mídia usa WebRTC por meio do Cloudflare Realtime SFU. O host publica uma vez no servidor de mídia e cada espectador recebe uma cópia do SFU, evitando a dependência de uma conexão direta entre os navegadores. O Supabase mantém autenticação, estado da sessão e Presence; ele não transporta vídeo ou áudio.
+
+O áudio depende do navegador, do sistema operacional e da origem selecionada. Cada transmissão aceita um host e até nove espectadores. Para ativar o recurso, crie um Realtime App na Cloudflare e configure `CLOUDFLARE_REALTIME_APP_ID` e `CLOUDFLARE_REALTIME_APP_SECRET` no ambiente do servidor. O secret nunca deve usar o prefixo `NEXT_PUBLIC_`.
 
 ## Stack opcional mais enxuta
 

@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(26);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -80,13 +80,23 @@ select throws_ok(
 
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000002', true);
 select lives_ok(
-  format('select public.activate_live_stream(%L)', (select id from test_live_session)),
+  format(
+    'select public.activate_live_stream_sfu(%L, %L, %L::jsonb)',
+    (select id from test_live_session),
+    'cloudflare-host-session',
+    '[{"location":"remote","sessionId":"cloudflare-host-session","trackName":"screen-video"}]'
+  ),
   'host ativa a transmissão'
 );
 select is(
   (select status::text from public.live_stream_sessions where id = (select id from test_live_session)),
   'live',
   'ativação registra status live'
+);
+select is(
+  (select sfu_session_id from public.live_stream_sessions where id = (select id from test_live_session)),
+  'cloudflare-host-session',
+  'ativação persiste a sessão do SFU'
 );
 
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000003', true);
@@ -183,17 +193,17 @@ select ok(
   exists (
     select 1 from pg_policies
     where schemaname = 'realtime' and tablename = 'messages'
-      and policyname = 'Group members can receive live presence and signaling'
+      and policyname = 'Group members can receive live channel events'
   ),
-  'existe política de leitura para Presence e Broadcast'
+  'existe política de leitura necessária ao canal de Presence'
 );
 select ok(
   exists (
     select 1 from pg_policies
     where schemaname = 'realtime' and tablename = 'messages'
-      and policyname = 'Group members can publish their live presence and signaling'
+      and policyname = 'Group members can publish live presence'
   ),
-  'existe política de escrita para Presence e Broadcast'
+  'existe política de escrita para Presence'
 );
 
 set local role authenticated;

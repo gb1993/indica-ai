@@ -95,25 +95,6 @@ export async function startLiveStreamAction(
   return { ok: true, data: session };
 }
 
-export async function activateLiveStreamAction(
-  sessionIdValue: string,
-): Promise<LiveActionResult> {
-  const sessionId = uuidSchema.safeParse(sessionIdValue);
-  if (!sessionId.success) return { ok: false, error: "Sessão inválida." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("activate_live_stream", {
-    p_session_id: sessionId.data,
-  });
-  if (error) {
-    return { ok: false, error: "Não foi possível ativar a transmissão." };
-  }
-
-  const session = await loadLiveSession(sessionId.data);
-  if (session) revalidatePath(`/app/groups/${session.groupId}`);
-  return { ok: true, data: undefined };
-}
-
 export async function heartbeatLiveStreamAction(
   sessionIdValue: string,
 ): Promise<LiveActionResult> {
