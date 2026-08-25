@@ -47,7 +47,7 @@ type DisplayMediaOptionsWithAudioHints = DisplayMediaStreamOptions & {
   surfaceSwitching?: "include" | "exclude";
   windowAudio?: "exclude" | "window" | "system";
 };
-type PresenceMetadata = { joined_at?: string };
+type PresenceMetadata = { user_id?: string; joined_at?: string };
 
 function ConnectedParticipants({ participants }: { participants: LiveStreamConnectedParticipant[] }) {
   if (!participants.length) return null;
@@ -123,9 +123,10 @@ function localDescription(connection: RTCPeerConnection): SfuDescription {
   return { type: description.type as "offer" | "answer", sdp: description.sdp };
 }
 
-export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageStatus }: {
+export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSession, initialUsageStatus }: {
   groupId: string;
   userId: string;
+  memberProfiles: Array<{ id: string; name: string; avatar_url: string | null }>;
   initialSession: LiveStreamSession | null;
   initialUsageStatus: LiveStreamUsageStatus;
 }) {
@@ -191,7 +192,6 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
   async function setupPresence(session: LiveStreamSession, role: "host" | "viewer") {
     const client = await getRealtimeClient();
     const channel = client.channel(`live:${session.id}`, { config: { private: true, presence: { key: userId } } });
-    let presenceSyncVersion = 0;
     let initialPresenceSettled = false;
     let resolveInitialPresence!: () => void;
     let rejectInitialPresence!: (error: Error) => void;
@@ -204,33 +204,26 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
       initialPresenceSettled = true;
       rejectInitialPresence(new Error("Não foi possível confirmar sua entrada na transmissão."));
     }, 10_000);
-    const loadConnectedParticipants = async (
-      entries: Array<[string, PresenceMetadata[]]>,
-      version: number,
-    ) => {
-      const ids = entries.map(([presenceUserId]) => presenceUserId);
-      const { data } = ids.length
-        ? await client.from("profiles").select("id, name, avatar_url").in("id", ids)
-        : { data: [] };
-      if (version !== presenceSyncVersion || baseChannelRef.current !== channel) return;
-
+    const syncPresence = () => {
+      const state = channel.presenceState();
+      const rawEntries = Object.entries(state) as Array<[string, PresenceMetadata[]]>;
+      const entries = Array.from(rawEntries.reduce((connected, [presenceKey, presences]) => {
+        const presenceUserId = String(presences[0]?.user_id ?? presenceKey);
+        const existing = connected.get(presenceUserId) ?? [];
+        connected.set(presenceUserId, [...existing, ...presences]);
+        return connected;
+      }, new Map<string, PresenceMetadata[]>()).entries());
+      setParticipantCount(Math.max(1, entries.length));
       setConnectedParticipants(buildLiveStreamParticipants({
         presences: entries.map(([presenceUserId, presences]) => ({
           id: presenceUserId,
           joinedAt: String(presences[0]?.joined_at ?? ""),
         })),
-        profiles: data ?? [],
+        profiles: memberProfiles,
         hostUserId: session.hostUserId,
         hostName: session.hostName,
         currentUserId: userId,
       }));
-    };
-    const syncPresence = () => {
-      const state = channel.presenceState();
-      const entries = Object.entries(state) as Array<[string, PresenceMetadata[]]>;
-      setParticipantCount(Math.max(1, entries.length));
-      presenceSyncVersion += 1;
-      void loadConnectedParticipants(entries, presenceSyncVersion);
       if (role !== "viewer") return;
 
       const admittedViewerIds = entries
@@ -243,7 +236,8 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
         .slice(0, MAX_LIVE_VIEWERS)
         .map(({ presenceUserId }) => presenceUserId);
 
-      if (state[userId] && !admittedViewerIds.includes(userId)) {
+      const currentUserIsPresent = entries.some(([presenceUserId]) => presenceUserId === userId);
+      if (currentUserIsPresent && !admittedViewerIds.includes(userId)) {
         const capacityError = new Error(`A transmissão atingiu o limite de ${MAX_LIVE_VIEWERS} espectadores.`);
         if (!initialPresenceSettled) {
           initialPresenceSettled = true;
@@ -257,7 +251,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
         return;
       }
 
-      if (state[userId] && !initialPresenceSettled) {
+      if (currentUserIsPresent && !initialPresenceSettled) {
         initialPresenceSettled = true;
         window.clearTimeout(initialPresenceTimeout);
         resolveInitialPresence();
@@ -601,7 +595,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
           <div className="space-y-4">
             <div ref={playerRef} className="relative aspect-video w-full overflow-hidden rounded-xl bg-black fullscreen:aspect-auto fullscreen:h-screen fullscreen:rounded-none">
               <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-contain" />
-              <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute right-3 top-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
+              <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
                 <AppIcon name={isFullscreen ? "minimize" : "maximize"} className="size-5" />
               </button>
             </div>
@@ -620,7 +614,7 @@ export function LiveStreamPanel({ groupId, userId, initialSession, initialUsageS
           <div className="space-y-4">
             <div ref={playerRef} className="relative aspect-video w-full overflow-hidden rounded-xl bg-black fullscreen:aspect-auto fullscreen:h-screen fullscreen:rounded-none">
               <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-contain" />
-              <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute right-3 top-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
+              <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
                 <AppIcon name={isFullscreen ? "minimize" : "maximize"} className="size-5" />
               </button>
             </div>
