@@ -778,34 +778,21 @@ export function LiveStreamPanel({
 
   return (
     <section
-      aria-labelledby="live-stream-title"
+      aria-label="Transmissão de tela"
       className="mt-8 overflow-hidden rounded-2xl border bg-(--surface) shadow-sm"
     >
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b px-5 py-4 sm:px-6">
-        <div>
-          <div className="flex items-center gap-2">
-            {(availableSession || ["starting", "hosting", "connecting", "watching"].includes(viewState)) && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-500">
-                <span className="size-2 rounded-full bg-red-500" /> AO VIVO
-              </span>
-            )}
-            <h2 id="live-stream-title" className="text-lg font-bold">
-              Transmissão de tela
-            </h2>
-            <span className="new-feature-badge" aria-label="Novo recurso">
-              NEW
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-(--muted)">
-            Compartilhamento direto entre os membros do grupo.
-          </p>
-        </div>
-        {(viewState === "hosting" || viewState === "watching") && (
-          <span className="text-sm text-(--muted)">
-            {participantCount} {participantCount === 1 ? "participante" : "participantes"}
+      {(availableSession || ["starting", "hosting", "connecting", "watching"].includes(viewState)) && (
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b px-5 py-4 sm:px-6">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-500">
+            <span className="size-2 rounded-full bg-red-500" /> AO VIVO
           </span>
-        )}
-      </div>
+          {(viewState === "hosting" || viewState === "watching") && (
+            <span className="text-sm text-(--muted)">
+              {participantCount} {participantCount === 1 ? "participante" : "participantes"}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="p-5 sm:p-6">
         {viewState === "hosting" ? (
@@ -906,7 +893,12 @@ export function LiveStreamPanel({
         ) : (
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className="font-semibold">Nenhuma transmissão ativa.</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold">Nenhuma transmissão ativa.</p>
+                <span className="new-feature-badge" aria-label="Novo recurso">
+                  NEW
+                </span>
+              </div>
               <p className="mt-1 text-sm text-(--muted)">
                 Qualquer membro pode compartilhar a tela com o grupo.
               </p>
