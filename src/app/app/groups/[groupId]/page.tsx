@@ -50,10 +50,10 @@ export default async function GroupPage({
     : null;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
-  const [{ data: group }, { data: membership }, { count }, { data: contentRows }, mostActiveResult, { data: liveRow }, liveUsageStatus] = await Promise.all([
+  const [{ data: group }, { data: membership }, { data: memberRows, count }, { data: contentRows }, mostActiveResult, { data: liveRow }, liveUsageStatus] = await Promise.all([
     supabase.from("groups").select("id, name, description").eq("id", groupId).single(),
     supabase.from("group_members").select("role").eq("group_id", groupId).eq("user_id", authData.user!.id).eq("status", "active").single(),
-    supabase.from("group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId).eq("status", "active"),
+    supabase.from("group_members").select("user:profiles!group_members_user_id_fkey(id, name, avatar_url)", { count: "exact" }).eq("group_id", groupId).eq("status", "active"),
     supabase.from("contents").select("id, group_id, type, title, description, thumbnail_url, status, completed_at, creator:profiles!contents_created_by_fkey(id, name), ratings:content_ratings(rating)").eq("group_id", groupId).order("created_at", { ascending: false }),
     supabase.rpc("get_group_most_active_members", { p_group_id: groupId }),
     supabase
@@ -84,6 +84,9 @@ export default async function GroupPage({
         startedAt: typedLiveRow.started_at,
       }
     : null;
+  const liveMemberProfiles = ((memberRows ?? []) as unknown as Array<{
+    user: { id: string; name: string; avatar_url: string | null } | null;
+  }>).flatMap((member) => member.user ? [member.user] : []);
   const activityRanks = new Map<string, ActivityRank>(
     (Array.isArray(mostActiveResult.data) ? mostActiveResult.data : [])
       .slice(0, 3)
@@ -156,6 +159,7 @@ export default async function GroupPage({
         <LiveStreamPanel
           groupId={groupId}
           userId={authData.user!.id}
+          memberProfiles={liveMemberProfiles}
           initialSession={initialLiveSession}
           initialUsageStatus={liveUsageStatus}
         />
