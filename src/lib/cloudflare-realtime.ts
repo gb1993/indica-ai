@@ -78,7 +78,7 @@ export async function createSfuSession(correlationId: string) {
   return requestCloudflare(
     `/sessions/new?${query.toString()}`,
     newSessionResponseSchema,
-    { method: "POST", body: "{}" },
+    { method: "POST" },
   );
 }
 
