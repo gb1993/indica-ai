@@ -48,6 +48,11 @@ type DisplayMediaOptionsWithAudioHints = DisplayMediaStreamOptions & {
   windowAudio?: "exclude" | "window" | "system";
 };
 type PresenceMetadata = { user_id?: string; joined_at?: string };
+type WebKitFullscreenVideo = HTMLVideoElement & {
+  webkitDisplayingFullscreen?: boolean;
+  webkitEnterFullscreen?: () => void;
+  webkitExitFullscreen?: () => void;
+};
 
 function ConnectedParticipants({ participants }: { participants: LiveStreamConnectedParticipant[] }) {
   if (!participants.length) return null;
@@ -144,7 +149,6 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<HTMLDivElement>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const clientRef = useRef<SupabaseClient | null>(null);
   const baseChannelRef = useRef<RealtimeChannel | null>(null);
@@ -519,9 +523,35 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
   }
 
   async function toggleFullscreen() {
+    const video = (viewState === "hosting" ? localVideoRef.current : remoteVideoRef.current) as WebKitFullscreenVideo | null;
+    if (!video) return;
+
     try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await playerRef.current?.requestFullscreen();
+      setErrorMessage("");
+
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+
+      if (video.webkitDisplayingFullscreen) {
+        video.webkitExitFullscreen?.();
+        return;
+      }
+
+      // iPhone/WebKit does not support element fullscreen for the player
+      // container, but exposes native fullscreen directly on HTMLVideoElement.
+      if (typeof video.webkitEnterFullscreen === "function") {
+        video.webkitEnterFullscreen();
+        return;
+      }
+
+      if (typeof video.requestFullscreen === "function") {
+        await video.requestFullscreen();
+        return;
+      }
+
+      throw new Error("Fullscreen API unavailable");
     } catch {
       setErrorMessage("Não foi possível abrir a transmissão em tela cheia.");
     }
@@ -532,10 +562,25 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
   }, [localStream]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(document.fullscreenElement === playerRef.current);
+    const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    const video = viewState === "hosting" ? localVideoRef.current : remoteVideoRef.current;
+    if (!video) return;
+
+    const handleWebKitEnterFullscreen = () => setIsFullscreen(true);
+    const handleWebKitExitFullscreen = () => setIsFullscreen(false);
+    video.addEventListener("webkitbeginfullscreen", handleWebKitEnterFullscreen);
+    video.addEventListener("webkitendfullscreen", handleWebKitExitFullscreen);
+
+    return () => {
+      video.removeEventListener("webkitbeginfullscreen", handleWebKitEnterFullscreen);
+      video.removeEventListener("webkitendfullscreen", handleWebKitExitFullscreen);
+    };
+  }, [viewState]);
 
   useEffect(() => {
     if (["starting", "hosting"].includes(viewState)) return;
@@ -593,8 +638,8 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
       <div className="p-5 sm:p-6">
         {viewState === "hosting" ? (
           <div className="space-y-4">
-            <div ref={playerRef} className="relative aspect-video w-full overflow-hidden rounded-xl bg-black fullscreen:aspect-auto fullscreen:h-screen fullscreen:rounded-none">
-              <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-contain" />
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+              <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-contain fullscreen:h-screen fullscreen:w-screen fullscreen:bg-black" />
               <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
                 <AppIcon name={isFullscreen ? "minimize" : "maximize"} className="size-5" />
               </button>
@@ -612,8 +657,8 @@ export function LiveStreamPanel({ groupId, userId, memberProfiles, initialSessio
           </div>
         ) : ["connecting", "watching"].includes(viewState) ? (
           <div className="space-y-4">
-            <div ref={playerRef} className="relative aspect-video w-full overflow-hidden rounded-xl bg-black fullscreen:aspect-auto fullscreen:h-screen fullscreen:rounded-none">
-              <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-contain" />
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+              <video ref={remoteVideoRef} autoPlay playsInline className="h-full w-full object-contain fullscreen:h-screen fullscreen:w-screen fullscreen:bg-black" />
               <button type="button" onClick={() => void toggleFullscreen()} aria-label={isFullscreen ? "Sair da tela cheia" : "Abrir em tela cheia"} className="absolute bottom-3 right-3 grid size-10 place-items-center rounded-lg bg-black/65 text-white transition hover:bg-black/80">
                 <AppIcon name={isFullscreen ? "minimize" : "maximize"} className="size-5" />
               </button>
