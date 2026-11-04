@@ -182,35 +182,8 @@ export default async function GroupPage({
         />
       )}
 
-      <section aria-label="Filtrar conteúdos por status" className="mt-8 border-b">
-        <Form action={`/app/groups/${groupId}`} scroll={false} className="mb-4">
-          {activeStatus && <input type="hidden" name="status" value={activeStatus} />}
-          <label htmlFor="content-search" className="mb-2 block text-sm font-medium">
-            Pesquisar conteúdos
-          </label>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              key={searchTerm}
-              id="content-search"
-              name="q"
-              type="search"
-              defaultValue={searchTerm}
-              placeholder="Pesquisar por título ou descrição"
-              className="app-input min-w-0 flex-1 basis-64"
-            />
-            <button type="submit" className="app-button-primary">Pesquisar</button>
-            {searchTerm && (
-              <Link
-                href={activeStatus ? `/app/groups/${groupId}?status=${activeStatus}` : `/app/groups/${groupId}`}
-                scroll={false}
-                className="app-button-secondary"
-              >
-                Limpar pesquisa
-              </Link>
-            )}
-          </div>
-        </Form>
-        <div className="flex gap-1 overflow-x-auto">
+      <section aria-label="Filtrar conteúdos por status" className="mt-8 flex flex-col gap-3 border-b lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <div className="flex min-w-0 gap-1 overflow-x-auto">
           <Link href={contentFilterHref()} aria-current={!activeStatus ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeStatus ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
           {sections.map((section) => {
             return (
@@ -220,6 +193,42 @@ export default async function GroupPage({
             );
           })}
         </div>
+        <Form action={`/app/groups/${groupId}`} scroll={false} className="relative mb-3 w-full lg:mb-2 lg:w-80 lg:shrink-0">
+          {activeStatus && <input type="hidden" name="status" value={activeStatus} />}
+          <label htmlFor="content-search" className="sr-only">
+            Pesquisar conteúdos
+          </label>
+          <input
+            key={searchTerm}
+            id="content-search"
+            name="q"
+            type="search"
+            defaultValue={searchTerm}
+            placeholder="Pesquisar conteúdos…"
+            className={`h-11 w-full min-w-0 rounded-xl border bg-(--surface-muted) pl-4 text-sm text-(--foreground) transition placeholder:text-(--muted) focus:border-(--accent) focus:bg-(--surface) focus:outline-none focus:ring-2 focus:ring-(--accent)/20 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none ${searchTerm ? "pr-24" : "pr-12"}`}
+          />
+          <div className="absolute inset-y-0 right-1.5 flex items-center gap-1">
+            {searchTerm && (
+              <Link
+                href={activeStatus ? `/app/groups/${groupId}?status=${activeStatus}` : `/app/groups/${groupId}`}
+                scroll={false}
+                aria-label="Limpar pesquisa"
+                title="Limpar pesquisa"
+                className="grid size-9 place-items-center rounded-lg text-(--muted) transition hover:bg-(--surface) hover:text-(--foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
+              >
+                <AppIcon name="close" className="size-4" />
+              </Link>
+            )}
+            <button
+              type="submit"
+              aria-label="Pesquisar conteúdos"
+              title="Pesquisar conteúdos"
+              className="grid size-9 place-items-center rounded-lg text-(--accent-strong) transition hover:bg-(--accent-soft) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
+            >
+              <AppIcon name="search" className="size-4" />
+            </button>
+          </div>
+        </Form>
       </section>
 
       <div className="mt-8 space-y-10">
