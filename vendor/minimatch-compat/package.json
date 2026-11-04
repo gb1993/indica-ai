@@ -1,0 +1,13 @@
+{
+  "name": "@indica-ai/minimatch-compat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Callable CommonJS API for legacy tooling, backed by patched minimatch.",
+  "main": "index.cjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "minimatch-modern": "npm:minimatch@^11.0.4"
+  }
+}
