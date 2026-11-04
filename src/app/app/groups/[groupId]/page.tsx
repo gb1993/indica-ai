@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Form from "next/form";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -36,15 +37,21 @@ const sections: Array<{ status: ContentStatus; title: string; subtitle: string; 
   },
 ];
 
+function normalizeSearch(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 export default async function GroupPage({
   params,
   searchParams,
 }: {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const { groupId } = await params;
   const query = await searchParams;
+  const searchTerm = query.q?.trim() ?? "";
+  const normalizedSearchTerm = normalizeSearch(searchTerm);
   const activeStatus = sections.some((section) => section.status === query.status)
     ? query.status as ContentStatus
     : null;
@@ -108,11 +115,21 @@ export default async function GroupPage({
         : null,
     } satisfies ContentCardData;
   });
+  const filteredContents = contents.filter((content) =>
+    normalizeSearch(`${content.title} ${content.description ?? ""}`).includes(normalizedSearchTerm),
+  );
+  const contentFilterHref = (status?: ContentStatus) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (searchTerm) params.set("q", searchTerm);
+    const queryString = params.toString();
+    return `/app/groups/${groupId}${queryString ? `?${queryString}` : ""}`;
+  };
   const visibleSections = activeStatus
     ? sections.filter((section) => section.status === activeStatus)
     : sections;
   const firstVisibleContentId = visibleSections
-    .flatMap((section) => contents.filter((content) => content.status === section.status))
+    .flatMap((section) => filteredContents.filter((content) => content.status === section.status))
     .at(0)?.id;
 
   return (
@@ -166,13 +183,38 @@ export default async function GroupPage({
       )}
 
       <section aria-label="Filtrar conteúdos por status" className="mt-8 border-b">
+        <Form action={`/app/groups/${groupId}`} scroll={false} className="mb-4">
+          {activeStatus && <input type="hidden" name="status" value={activeStatus} />}
+          <label htmlFor="content-search" className="mb-2 block text-sm font-medium">
+            Pesquisar conteúdos
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              key={searchTerm}
+              id="content-search"
+              name="q"
+              type="search"
+              defaultValue={searchTerm}
+              placeholder="Pesquisar por título ou descrição"
+              className="app-input min-w-0 flex-1 basis-64"
+            />
+            <button type="submit" className="app-button-primary">Pesquisar</button>
+            {searchTerm && (
+              <Link
+                href={activeStatus ? `/app/groups/${groupId}?status=${activeStatus}` : `/app/groups/${groupId}`}
+                scroll={false}
+                className="app-button-secondary"
+              >
+                Limpar pesquisa
+              </Link>
+            )}
+          </div>
+        </Form>
         <div className="flex gap-1 overflow-x-auto">
-          <Link href={`/app/groups/${groupId}`} aria-current={!activeStatus ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeStatus ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
+          <Link href={contentFilterHref()} aria-current={!activeStatus ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${!activeStatus ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>Todos</Link>
           {sections.map((section) => {
-            const params = new URLSearchParams();
-            params.set("status", section.status);
             return (
-              <Link key={section.status} href={`/app/groups/${groupId}?${params}`} aria-current={activeStatus === section.status ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeStatus === section.status ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>
+              <Link key={section.status} href={contentFilterHref(section.status)} aria-current={activeStatus === section.status ? "page" : undefined} className={`shrink-0 border-b-2 px-4 py-3 text-sm transition ${activeStatus === section.status ? "border-b-(--accent) font-semibold text-(--foreground)" : "border-b-transparent text-(--muted) hover:text-(--foreground)"}`}>
                 {section.title}
               </Link>
             );
@@ -182,7 +224,7 @@ export default async function GroupPage({
 
       <div className="mt-8 space-y-10">
         {visibleSections.map((section) => {
-          const items = contents.filter((content) => content.status === section.status);
+          const items = filteredContents.filter((content) => content.status === section.status);
           return (
             <section key={section.status}>
               <div className="mb-4 flex items-start justify-between gap-4">
@@ -195,6 +237,7 @@ export default async function GroupPage({
               {items.length ? (
                 section.status === "completed" || activeStatus === "pending" ? (
                   <CompletedContentsGrid
+                    key={searchTerm}
                     contents={items}
                     eagerContentId={firstVisibleContentId}
                   />
@@ -215,8 +258,8 @@ export default async function GroupPage({
               ) : (
                 <EmptyState
                   title={section.title}
-                  description={section.empty}
-                  action={section.status !== "completed" ? (
+                  description={searchTerm ? `Nenhum conteúdo encontrado para “${searchTerm}”.` : section.empty}
+                  action={!searchTerm && section.status !== "completed" ? (
                     <Link
                       href={`/app/groups/${groupId}/contents/new`}
                       className="app-button-primary"
