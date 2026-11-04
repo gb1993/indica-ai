@@ -19,6 +19,7 @@ import {
   Moon,
   Pencil,
   Plus,
+  Search,
   Settings,
   Sparkles,
   Star,
@@ -54,6 +55,7 @@ export type AppIconName =
   | "moon"
   | "pencil"
   | "plus"
+  | "search"
   | "settings"
   | "sparkles"
   | "star"
@@ -86,6 +88,7 @@ const icons: Record<AppIconName, LucideIcon> = {
   moon: Moon,
   pencil: Pencil,
   plus: Plus,
+  search: Search,
   settings: Settings,
   sparkles: Sparkles,
   star: Star,
